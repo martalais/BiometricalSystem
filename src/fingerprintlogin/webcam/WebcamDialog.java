@@ -21,9 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package fingerprintlogin;
+package fingerprintlogin.webcam;
 
 import com.github.sarxos.webcam.Webcam;
+import fingerprintlogin.CanvasImageViewer;
+import fingerprintlogin.webcam.WebcamStreamViewer;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;
@@ -47,6 +49,7 @@ import javafx.scene.control.ProgressIndicator;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
@@ -64,7 +67,7 @@ public class WebcamDialog extends Stage implements Initializable{
     private CanvasImageViewer mCanvas = new CanvasImageViewer();
     private ProgressIndicator mProgress = new ProgressIndicator(-1.0);
     
-    private WebcamStreamTask mStreamTask;
+    private WebcamStreamViewer mStreamViewer;
     private BufferedImage mResultImage = null;
     
 
@@ -90,7 +93,8 @@ public class WebcamDialog extends Stage implements Initializable{
         ObservableList<WebcamInfo> devices = FXCollections.observableArrayList();
         int counter = 0;
         for (Webcam webcam : Webcam.getWebcams()){
-            WebcamInfo device = new WebcamInfo(webcam, counter++);            
+            WebcamInfo device = new WebcamInfo(webcam, counter++);    
+            devices.add(device);
         }
         //Cuando se seleccione una webcam de la lista tratamos de abrirlo e iniciar el stream de la webcam
         cmbDevices.setItems(devices);
@@ -116,73 +120,64 @@ public class WebcamDialog extends Stage implements Initializable{
         HBox.setHgrow(mProgress, Priority.ALWAYS);
         HBox.setMargin(mProgress, new Insets(50));
         boxStreamImage.getChildren().add(mProgress);
-        //Abrimos el stream en otro hilo para que no bloquee el actual
-        mStreamTask = new WebcamStreamTask(webcam, mCanvas);
-        Thread initializer = new Thread(mStreamTask);
-        initializer.setDaemon(true);
-        initializer.start();
-        
+        //Abrimos un stream a la webcam donde se reflejara en el canvas
+        if (mStreamViewer != null){
+            mStreamViewer.stop();
+        }
+        mStreamViewer = new WebcamStreamViewer(webcam, mCanvas, new WebcamStreamViewer.WebcamStreamListener() {
+            @Override
+            public void onStart(Webcam webcam) {
+               cmbDevices.setDisable(false);
+               boxStreamImage.getChildren().clear();
+               HBox.setHgrow(mCanvas, Priority.ALWAYS);
+               boxStreamImage.getChildren().add(mCanvas);
+               
+            }
+
+            @Override
+            public void onStop(Webcam webcam) {
+
+            }
+        }); 
+        mStreamViewer.start();
     }
     
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         
         btnAccept.setOnAction((event) -> {
+            if (mStreamViewer != null){
+                mStreamViewer.stop();
+                mResultImage = mStreamViewer.getLastImage();
+            }
             close();
         });
         btnCancel.setOnAction((event) -> {
+            if (mStreamViewer != null){
+                mStreamViewer.stop();
+            }
             mResultImage = null;
             close();
         });
         btnCapture.setOnAction((event) -> {
-            initWebcam(null);
+            if (mStreamViewer != null){
+                if (mStreamViewer.isPaused()){
+                    mStreamViewer.play();
+                    btnCapture.setText("Capturar");
+                }
+                else{
+                    mStreamViewer.pause();
+                    btnCapture.setText("Tomar otra");
+                }
+                
+            }
+        });
+        this.setOnCloseRequest((event)->{
+            event.consume();
+            btnCancel.fire();
         });
     }
     
-    private class WebcamStreamTask extends Task<Void>{
-        private boolean mPlay;
-        private BufferedImage mLastImage;
-        private Webcam mWebcam;
-        private CanvasImageViewer mCanvas;
-        
-        public WebcamStreamTask(Webcam webcam, CanvasImageViewer canvas){
-            mPlay = true;
-            mWebcam = webcam;
-            mCanvas = canvas;
-            
-        }
-        public void play(){
-            mPlay = true;
-        }
-        public void stop(){
-            mPlay = false;
-        }
-       
-        @Override
-        protected Void call() throws Exception {
-            Runnable imageUpdater = () -> {
-                mCanvas.updateDraw();
-            };
-            mWebcam.open();
-            
-            Platform.runLater(() -> {               
-                boxStreamImage.getChildren().clear();
-                boxStreamImage.getChildren().add(mCanvas);
-            });
-            
-            while(isRunning()){
-                if (mPlay){                    
-                    mLastImage = mWebcam.getImage();
-                    mCanvas.setImage(mLastImage, false);
-                    Platform.runLater(imageUpdater);
-                }
-                else{
-                    Thread.sleep(100);
-                }
-            }
-            return null;
-        }
-    }
     
     private class WebcamInfo {
         private Webcam mDevice;

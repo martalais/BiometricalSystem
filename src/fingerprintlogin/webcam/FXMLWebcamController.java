@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package fingerprintlogin;
+package fingerprintlogin.webcam;
 
 import java.net.URL;
 import java.util.ResourceBundle;
