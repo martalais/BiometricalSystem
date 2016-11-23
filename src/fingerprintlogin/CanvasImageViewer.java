@@ -39,7 +39,7 @@ import javafx.scene.paint.Color;
 public class CanvasImageViewer extends Canvas {
     private Color backgroundColor = new Color(0.2, 0.3, 0.3, 1);
     private Color cameraColor = new Color(0.8, 0.8, 0.8, 1.0);
-    private AtomicReference<Image> mImage = new AtomicReference<>();
+    private Image mImage;
     
     
     @Override
@@ -93,7 +93,7 @@ public class CanvasImageViewer extends Canvas {
     
     public void setImage(BufferedImage img){
         if (img != null){
-            mImage.set(SwingFXUtils.toFXImage(img, (WritableImage)mImage.get()));
+            mImage = SwingFXUtils.toFXImage(img, (WritableImage)mImage);
         }
         else{
             mImage = null;
@@ -101,7 +101,7 @@ public class CanvasImageViewer extends Canvas {
     }
     
     public void updateDraw(){
-        if (mImage.get() == null){
+        if (mImage == null){
             drawNoImage();
         }
         else{
@@ -116,7 +116,7 @@ public class CanvasImageViewer extends Canvas {
         double width = getWidth();
         double height = getHeight();
         double ratio = height / width;
-        double imageRatio = mImage.get().getHeight() / mImage.get().getWidth();
+        double imageRatio = mImage.getHeight() / mImage.getWidth();
         double imageWidth;
         double imageHeight;
         //El largo de la imagen es mayor a la zona donde pintaremos relativamente
@@ -130,11 +130,10 @@ public class CanvasImageViewer extends Canvas {
             imageHeight = height;
             imageWidth = imageHeight / imageRatio;
         }
-        System.out.println("Image: " + imageWidth + " " + imageHeight);
         gc.clearRect(0, 0, width, height);  
         gc.setFill(backgroundColor);
         gc.fillRect(0, 0, width, width);
-        gc.drawImage(mImage.get(), (width - imageWidth) / 2.0, (height-imageHeight) /2.0, imageWidth, imageHeight);
+        gc.drawImage(mImage, (width - imageWidth) / 2.0, (height-imageHeight) /2.0, imageWidth, imageHeight);
         
     }
     

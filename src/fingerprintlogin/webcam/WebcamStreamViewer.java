@@ -90,20 +90,18 @@ public class WebcamStreamViewer extends Task<Void> {
                 mListener.onStart(mWebcam); 
             });
         }
-        Dimension dimension = mWebcam.getViewSize();
-        ByteBuffer buffer = ByteBuffer.allocateDirect(dimension.width * dimension.height * 4);
+        
         while (!mStop) {
 
             if (mPlay) {
-                //mLastImage = mWebcam.getImage();
-                mWebcam.getImageBytes(buffer);
-                System.out.println("Image received");
-                //mCanvas.setImage(mLastImage, false);
-                //Platform.runLater(imageUpdater);
+                mLastImage = mWebcam.getImage();
+                mCanvas.setImage(mLastImage, false);
+                Platform.runLater(imageUpdater);
             } else {
                 Thread.sleep(100);
             }
         }
+        System.out.println("END");
         mWebcam.close();
         if (mListener != null){
             Platform.runLater(() -> {
