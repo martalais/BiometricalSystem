@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.canvas.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.geometry.*?>
+<?import javafx.scene.text.*?>
+<?import java.lang.*?>
+<?import java.net.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+
+<TabPane prefHeight="710.0" prefWidth="924.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fingerprintlogin.FXMLMainAppController">
+   <tabs>
+      <Tab closable="false" text="Identificador">
+         <content>
+            <VBox>
+               <children>
+                  <HBox prefHeight="100.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+                     <children>
+                        <SplitPane dividerPositions="0.6662030598052852" prefHeight="160.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
+                           <items>
+                              <AnchorPane minHeight="0.0" minWidth="300.0" prefHeight="160.0" prefWidth="100.0" />
+                              <VBox prefHeight="200.0" prefWidth="100.0">
+                                 <children>
+                                    <Accordion VBox.vgrow="ALWAYS">
+                                       <panes>
+                                          <TitledPane text="Información general">
+                                             <content>
+                                                <VBox prefHeight="200.0" prefWidth="100.0">
+                                                   <children>
+                                                      <Label text="Nombre:">
+                                                         <VBox.margin>
+                                                            <Insets top="10.0" />
+                                                         </VBox.margin>
+                                                      </Label>
+                                                      <TextField editable="false" />
+                                                      <Label text="Apellidos:">
+                                                         <VBox.margin>
+                                                            <Insets top="10.0" />
+                                                         </VBox.margin>
+                                                      </Label>
+                                                      <TextField editable="false" />
+                                                      <Label text="Matrícula:">
+                                                         <VBox.margin>
+                                                            <Insets top="10.0" />
+                                                         </VBox.margin>
+                                                      </Label>
+                                                      <TextField editable="false" />
+                                                      <Separator prefWidth="200.0">
+                                                         <VBox.margin>
+                                                            <Insets top="10.0" />
+                                                         </VBox.margin>
+                                                      </Separator>
+                                                      <ScrollPane prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+                                                         <VBox.margin>
+                                                            <Insets top="10.0" />
+                                                         </VBox.margin>
+                                                      </ScrollPane>
+                                                   </children>
+                                                </VBox>
+                                             </content>
+                                          </TitledPane>
+                                       </panes>
+                                    </Accordion>
+                                 </children>
+                              </VBox>
+                           </items>
+                        </SplitPane>
+                     </children>
+                  </HBox>
+                  <ToolBar nodeOrientation="LEFT_TO_RIGHT" prefHeight="40.0" prefWidth="200.0">
+                     <items>
+                        <Button mnemonicParsing="false" prefHeight="33.0" prefWidth="107.0" text="Cancelar" />
+                        <Separator orientation="VERTICAL" prefHeight="0.0" prefWidth="17.0" />
+                        <ProgressIndicator prefHeight="28.0" prefWidth="56.0" />
+                        <Label text="Buscando huella digital..." />
+                     </items>
+                  </ToolBar>
+               </children>
+            </VBox>
+         </content>
+      </Tab>
+      <Tab closable="false" text="Registro">
+         <content>
+            <HBox>
+               <children>
+                  <VBox prefHeight="200.0" prefWidth="100.0" HBox.hgrow="ALWAYS">
+                     <children>
+                        <TabPane prefHeight="615.0" prefWidth="847.0" side="LEFT" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+                           <tabs>
+                              <Tab closable="false" styleClass="transparent" text="Información General">
+                                 <content>
+                                    <VBox prefHeight="495.0" prefWidth="0.0" styleClass="outterContainer">
+                                       <children>
+                                          <Pane prefHeight="65.0" prefWidth="923.0" styleClass="headerContainer" VBox.vgrow="NEVER">
+                                             <children>
+                                                <Label layoutX="20.0" layoutY="16.0" styleClass="headerText" text="Información general" textFill="WHITE">
+                                                   <font>
+                                                      <Font name="Lucida Sans Demibold" size="21.0" />
+                                                   </font>
+                                                </Label>
+                                             </children>
+                                          </Pane>
+                                          <GridPane layoutX="14.0" layoutY="36.0" prefHeight="177.0" prefWidth="931.0">
+                                             <children>
+                                                <Label text="Nombre:" />
+                                                <Label text="Apellidos:" GridPane.rowIndex="1" />
+                                                <Label text="Matrícula:" GridPane.rowIndex="2" />
+                                                <Label text="E-Mail:" GridPane.rowIndex="3" />
+                                                <TextField prefHeight="25.0" prefWidth="862.0" GridPane.columnIndex="1" />
+                                                <TextField GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                                                <TextField GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                                                <TextField GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                                                <DatePicker GridPane.columnIndex="1" GridPane.hgrow="ALWAYS" GridPane.rowIndex="4" />
+                                                <Label text="Fecha de nacimiento:" GridPane.rowIndex="4" />
+                                             </children>
+                                             <columnConstraints>
+                                                <ColumnConstraints hgrow="NEVER" maxWidth="468.0" minWidth="227.0" prefWidth="227.0" />
+                                                <ColumnConstraints hgrow="ALWAYS" minWidth="10.0" prefWidth="696.0" />
+                                             </columnConstraints>
+                                             <rowConstraints>
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                                <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                             </rowConstraints>
+                                             <VBox.margin>
+                                                <Insets left="15.0" right="15.0" />
+                                             </VBox.margin>
+                                          </GridPane>
+                                       </children>
+                                       <opaqueInsets>
+                                          <Insets />
+                                       </opaqueInsets>
+                                    </VBox>
+                                 </content>
+                              </Tab>
+                              <Tab text="Fotografía">
+                                 <content>
+                                    <VBox prefHeight="200.0" prefWidth="100.0" styleClass="outterContainer">
+                                       <children>
+                                          <Pane prefHeight="65.0" prefWidth="923.0" styleClass="headerContainer">
+                                             <children>
+                                                <Label layoutX="20.0" layoutY="16.0" styleClass="headerText" text="Seleccionar Fotografía">
+                                                   <font>
+                                                      <Font size="21.0" />
+                                                   </font>
+                                                </Label>
+                                             </children>
+                                          </Pane>
+                                          <HBox prefHeight="100.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+                                             <children>
+                                                <VBox fx:id="boxImageContainer" prefHeight="407.0" prefWidth="326.0" spacing="10.0" HBox.hgrow="SOMETIMES">
+                                                   <children>
+                                                      <AnchorPane prefHeight="200.0" prefWidth="200.0" style="-fx-background-color: #4A4654;" VBox.vgrow="ALWAYS" />
+                                                      <Separator prefWidth="200.0" />
+                                                      <HBox alignment="TOP_RIGHT" prefHeight="26.0" prefWidth="326.0" spacing="10.0" VBox.vgrow="NEVER">
+                                                         <children>
+                                                            <Button fx:id="btnWebcam" mnemonicParsing="false" prefWidth="128.0" text="Tomar fotografía" wrapText="true" HBox.hgrow="NEVER" />
+                                                            <Button fx:id="btnBrowseImage" mnemonicParsing="false" text="Desde archivo" wrapText="true" />
+                                                         </children>
+                                                      </HBox>
+                                                   </children></VBox>
+                                             </children>
+                                             <VBox.margin>
+                                                <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+                                             </VBox.margin>
+                                          </HBox>
+                                       </children>
+                                    </VBox>
+                                 </content>
+                              </Tab>
+                              <Tab text="Huella">
+                                 <content>
+                                    <VBox prefHeight="200.0" prefWidth="100.0" styleClass="outterContainer">
+                                       <children>
+                                          <Pane prefHeight="115.0" prefWidth="812.0" styleClass="headerContainer">
+                                             <children>
+                                                <Label layoutX="20.0" layoutY="16.0" styleClass="headerText" text="Capturar huella digital" textFill="WHITE">
+                                                   <font>
+                                                      <Font name="Lucida Sans Demibold" size="21.0" />
+                                                   </font>
+                                                </Label>
+                                             </children>
+                                          </Pane>
+                                       </children>
+                                    </VBox>
+                                 </content>
+                              </Tab>
+                           </tabs>
+                        </TabPane>
+                        <ToolBar nodeOrientation="RIGHT_TO_LEFT" prefWidth="920.0" VBox.vgrow="NEVER">
+                           <items>
+                              <Button mnemonicParsing="false" prefHeight="35.0" prefWidth="78.0" text="Registrar" />
+                           </items>
+                        </ToolBar>
+                     </children>
+                     <HBox.margin>
+                        <Insets />
+                     </HBox.margin>
+                  </VBox>
+               </children>
+            </HBox>
+         </content>
+      </Tab>
+   </tabs>
+   <stylesheets>
+       <URL value="@fxmlmainapp.css" />
+   </stylesheets>
+</TabPane>
