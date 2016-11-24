@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.canvas.*?>
+<?import javafx.geometry.*?>
+<?import java.lang.*?>
+<?import java.net.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.image.*?>
+
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="414.0" prefWidth="645.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+   <stylesheets><URL value="@/fingerprint/app/fxmlmainapp.css" /></stylesheets>
+   <children>
+      <VBox prefHeight="200.0" prefWidth="100.0" styleClass="headerContainer">
+         <children>
+            <Label maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="88.0" prefWidth="645.0" styleClass="headerText" text="Escanee su huella" VBox.vgrow="ALWAYS">
+               <padding>
+                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+               </padding>
+            </Label>
+         </children>
+      </VBox>
+      <HBox prefHeight="100.0" prefWidth="200.0" styleClass="mainContainer" VBox.vgrow="ALWAYS">
+         <children>
+            <VBox fx:id="boxImageContainer" prefHeight="293.0" prefWidth="265.0" styleClass="headerContainer" />
+            <VBox fx:id="boxProgressContainer" prefHeight="293.0" prefWidth="384.0" HBox.hgrow="ALWAYS">
+               <children>
+                  <HBox prefHeight="45.0" prefWidth="404.0" spacing="10.0" VBox.vgrow="NEVER">
+                     <children>
+                        <Label maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="365.0" text="Seleccione un dispositivo:" wrapText="true" />
+                        <ComboBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="26.0" prefWidth="331.0" HBox.hgrow="ALWAYS" />
+                     </children>
+                     <padding>
+                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                     </padding>
+                  </HBox>
+                  <Separator prefWidth="200.0" />
+                  <Label fx:id="lblStatus" maxWidth="1.7976931348623157E308" prefHeight="97.0" prefWidth="404.0" style="-fx-background-color: #000000;" text="Hola" textFill="#ffdfdf" wrapText="true">
+                     <padding>
+                        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                     </padding>
+                  </Label>
+               </children></VBox>
+         </children>
+      </HBox>
+      <HBox alignment="BOTTOM_RIGHT" prefHeight="36.0" prefWidth="645.0" spacing="10.0" VBox.vgrow="NEVER">
+         <children>
+            <Button mnemonicParsing="false" prefHeight="82.0" prefWidth="116.0" styleClass="buttonOk" text="Aceptar">
+                <graphic>
+                    <ImageView fitHeight="24.0" fitWidth="24.0" preserveRatio="true">
+                    <image>       
+                      <Image url="/resources/ok.png" />          
+                    </image>
+                    </ImageView>
+                 </graphic>
+            </Button>
+            <Button mnemonicParsing="false" prefHeight="95.0" prefWidth="123.0" styleClass="buttonCancel" text="Cancelar"> 
+                <graphic>
+                    <ImageView fitHeight="24.0" fitWidth="24.0" preserveRatio="true">
+                    <image>       
+                      <Image url="/resources/cancel.png" />          
+                    </image>
+                    </ImageView>
+                 </graphic>
+            </Button>
+         </children>
+         <padding>
+            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+         </padding>
+      </HBox>
+   </children>  
+</VBox>

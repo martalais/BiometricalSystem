@@ -21,11 +21,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package fingerprintlogin.webcam;
+package fingerprint.webcam;
 
 import com.github.sarxos.webcam.Webcam;
-import fingerprintlogin.CanvasImageViewer;
-import fingerprintlogin.webcam.WebcamStreamViewer;
+import fingerprint.app.CanvasImageViewer;
+import fingerprint.webcam.WebcamStreamViewer;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URL;

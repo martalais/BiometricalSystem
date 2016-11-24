@@ -11,7 +11,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<TabPane prefHeight="710.0" prefWidth="924.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fingerprintlogin.MainAppController">
+<TabPane prefHeight="710.0" prefWidth="924.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fingerprint.app.MainAppController">
    <tabs>
       <Tab closable="false" text="Identificador">
          <content>
@@ -92,7 +92,7 @@
                            <tabs>
                               <Tab closable="false" styleClass="transparent" text="Información General">
                                  <content>
-                                    <VBox prefHeight="495.0" prefWidth="0.0" styleClass="outterContainer">
+                                    <VBox prefHeight="495.0" prefWidth="0.0" styleClass="mainContainer">
                                        <children>
                                           <Pane prefHeight="65.0" prefWidth="923.0" styleClass="headerContainer" VBox.vgrow="NEVER">
                                              <children>
@@ -140,7 +140,7 @@
                               </Tab>
                               <Tab text="Fotografía">
                                  <content>
-                                    <VBox prefHeight="200.0" prefWidth="100.0" styleClass="outterContainer">
+                                    <VBox prefHeight="200.0" prefWidth="100.0" styleClass="mainContainer">
                                        <children>
                                           <Pane prefHeight="65.0" prefWidth="923.0" styleClass="headerContainer">
                                              <children>
@@ -159,8 +159,24 @@
                                                       <Separator prefWidth="200.0" />
                                                       <HBox alignment="TOP_RIGHT" prefHeight="26.0" prefWidth="326.0" spacing="10.0" VBox.vgrow="NEVER">
                                                          <children>
-                                                            <Button fx:id="btnWebcam" mnemonicParsing="false" prefWidth="128.0" text="Tomar fotografía" wrapText="true" HBox.hgrow="NEVER" />
-                                                            <Button fx:id="btnBrowseImage" mnemonicParsing="false" text="Desde archivo" wrapText="true" />
+                                                            <Button fx:id="btnWebcam" mnemonicParsing="false" prefHeight="34.0" prefWidth="160.0" text="Tomar fotografía" wrapText="true" HBox.hgrow="NEVER">
+                                                                <graphic>
+                                                                    <ImageView fitHeight="24.0" fitWidth="24.0" preserveRatio="true">
+                                                                    <image>       
+                                                                      <Image url="/resources/camera.png" />          
+                                                                    </image>
+                                                                    </ImageView>
+                                                                </graphic>
+                                                            </Button>
+                                                            <Button fx:id="btnBrowseImage" mnemonicParsing="false" text="Desde archivo" wrapText="true">
+                                                                <graphic>
+                                                                    <ImageView fitHeight="24.0" fitWidth="24.0" preserveRatio="true">
+                                                                    <image>       
+                                                                      <Image url="/resources/browseimage.png" />          
+                                                                    </image>
+                                                                    </ImageView>
+                                                                 </graphic>
+                                                            </Button>
                                                          </children>
                                                       </HBox>
                                                    </children></VBox>
@@ -175,7 +191,7 @@
                               </Tab>
                               <Tab text="Huella">
                                  <content>
-                                    <VBox prefHeight="200.0" prefWidth="100.0" styleClass="outterContainer">
+                                    <VBox prefHeight="200.0" prefWidth="100.0" styleClass="mainContainer">
                                        <children>
                                           <Pane prefHeight="115.0" prefWidth="812.0" styleClass="headerContainer">
                                              <children>
@@ -194,7 +210,7 @@
                         </TabPane>
                         <ToolBar nodeOrientation="RIGHT_TO_LEFT" prefWidth="920.0" VBox.vgrow="NEVER">
                            <items>
-                              <Button mnemonicParsing="false" prefHeight="35.0" prefWidth="78.0" text="Registrar" />
+                              <Button fx:id="btnRegister" mnemonicParsing="false" prefHeight="40.0" prefWidth="78.0" text="Registrar" />
                            </items>
                         </ToolBar>
                      </children>

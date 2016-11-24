@@ -21,10 +21,9 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package fingerprintlogin;
+package fingerprint.app;
 
 import java.awt.image.BufferedImage;
-import java.util.concurrent.atomic.AtomicReference;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -37,10 +36,10 @@ import javafx.scene.paint.Color;
  * @author xmbeat
  */
 public class CanvasImageViewer extends Canvas {
-    private Color backgroundColor = new Color(0.2, 0.3, 0.3, 1);
+    private Color mBackground = new Color(0.2, 0.3, 0.3, 1);
     private Color cameraColor = new Color(0.8, 0.8, 0.8, 1.0);
     private Image mImage;
-    
+    private Image mDefaultImage;
     
     @Override
     public double minHeight(double width)
@@ -48,6 +47,9 @@ public class CanvasImageViewer extends Canvas {
         return 64;
     }
 
+    public void setBackgroundColor(double r, double g, double b, double a){
+        mBackground = new Color(r, g, b, a);
+    }
     @Override
     public double maxHeight(double width)
     {
@@ -100,23 +102,37 @@ public class CanvasImageViewer extends Canvas {
         }
     }
     
-    public void updateDraw(){
-        if (mImage == null){
-            drawNoImage();
+    public void setDefaultImage(BufferedImage img){
+        if (img != null){
+            mDefaultImage = SwingFXUtils.toFXImage(img, (WritableImage)mDefaultImage);
         }
         else{
-            drawImage();
+            mDefaultImage = null;
+        }
+    }
+    
+    public void updateDraw(){
+        if (mImage == null){
+            if (mDefaultImage == null){
+                drawNoImage();
+            }
+            else{
+                drawImage(mDefaultImage);
+            }
+        }
+        else{
+            drawImage(mImage);
         }
     }
 
     
-    private void drawImage(){
+    private void drawImage(Image img){
     
         GraphicsContext gc = getGraphicsContext2D();
         double width = getWidth();
         double height = getHeight();
         double ratio = height / width;
-        double imageRatio = mImage.getHeight() / mImage.getWidth();
+        double imageRatio = img.getHeight() / img.getWidth();
         double imageWidth;
         double imageHeight;
         //El largo de la imagen es mayor a la zona donde pintaremos relativamente
@@ -131,9 +147,10 @@ public class CanvasImageViewer extends Canvas {
             imageWidth = imageHeight / imageRatio;
         }
         gc.clearRect(0, 0, width, height);  
-        gc.setFill(backgroundColor);
-        gc.fillRect(0, 0, width, width);
-        gc.drawImage(mImage, (width - imageWidth) / 2.0, (height-imageHeight) /2.0, imageWidth, imageHeight);
+        System.out.println("size: " + width + " " + height);
+        gc.setFill(mBackground);
+        gc.fillRect(0, 0, width, height);
+        gc.drawImage(img, (width - imageWidth) / 2.0, (height-imageHeight) /2.0, imageWidth, imageHeight);
         
     }
     
@@ -166,7 +183,7 @@ public class CanvasImageViewer extends Canvas {
         cameraHeight = boxHeight + topBoxHeight / 2.0;
         circleSize = boxHeight * 0.7;
         //Dibujamos el fondo
-        gc.setFill(backgroundColor);
+        gc.setFill(mBackground);
         gc.fillRect(0, 0, width, height);
         
         //Dibujamos el cuerpo de la camara
@@ -174,13 +191,13 @@ public class CanvasImageViewer extends Canvas {
         gc.fillRoundRect((width - topBoxWidth) / 2.0, (height - cameraHeight) / 2.0, topBoxWidth, topBoxHeight, arcSize, arcSize);
         gc.fillRoundRect((width - boxWidth) / 2.0, (height - cameraHeight) / 2.0 + topBoxHeight * 0.5, boxWidth, boxHeight, arcSize, arcSize);
         //Dibujamos los circulos de la camara
-        gc.setFill(backgroundColor);
+        gc.setFill(mBackground);
         gc.fillOval((width - circleSize) / 2.0, (height - circleSize) / 2.0 + topBoxHeight * 0.25, circleSize, circleSize);
         circleSize *= 0.7;
         gc.setFill(cameraColor);
         gc.fillOval((width - circleSize) / 2.0, (height - circleSize) / 2.0 + topBoxHeight * 0.25, circleSize, circleSize);
         //Dibujamos el rectangulo del flash
-        gc.setFill(backgroundColor);
+        gc.setFill(mBackground);
         gc.fillRoundRect((width - boxWidth) / 2.0 + boxHeight * 0.1, (height - cameraHeight) / 2.0 + topBoxHeight * 0.5  + boxHeight * 0.1, boxWidth * 0.15, boxHeight * 0.15, arcSize / 2.0, arcSize / 2.0);
         
     }

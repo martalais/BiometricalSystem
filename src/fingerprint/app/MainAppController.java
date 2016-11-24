@@ -21,9 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package fingerprintlogin;
+package fingerprint.app;
 
-import fingerprintlogin.webcam.WebcamDialog;
+import fingerprint.controls.EnrollmentDialog;
+import fingerprint.webcam.WebcamDialog;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -46,6 +47,7 @@ public class MainAppController implements Initializable {
     @FXML private Button btnBrowseImage;
     @FXML private Button btnWebcam;
     @FXML private VBox boxImageContainer;
+    @FXML private Button btnRegister;
     private CanvasImageViewer mCanvas;
     /**
      * Initializes the controller class.
@@ -62,6 +64,8 @@ public class MainAppController implements Initializable {
         btnBrowseImage.setOnAction((event) -> {
             FileChooser chooser = new FileChooser();
             chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Imágenes", "*.jpg", "*.png", "*.bmp"));
+         
+            chooser.setInitialDirectory(new File(System.getProperty("user.home")));
             File file = chooser.showOpenDialog(btnBrowseImage.getScene().getWindow());
             if (file != null){
                 try {
@@ -80,6 +84,11 @@ public class MainAppController implements Initializable {
             if (image != null){
                 mCanvas.setImage(image);
             }
+        });
+        
+        btnRegister.setOnAction((event) -> {
+            EnrollmentDialog enrollDialog = new EnrollmentDialog();
+            enrollDialog.showDialog();
         });
     }    
     
