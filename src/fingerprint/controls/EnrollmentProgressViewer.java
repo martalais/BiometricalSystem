@@ -23,27 +23,23 @@
  */
 package fingerprint.controls;
 
-import java.awt.image.BufferedImage;
-import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.VPos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
 import javafx.scene.effect.InnerShadow;
-import javafx.scene.image.Image;
-import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.CycleMethod;
-import javafx.scene.paint.RadialGradient;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
+import uaz.fingerprint.EnrollResult;
+import uaz.fingerprint.Reader;
 
 /**
  *
  * @author Juan Hebert Chablé Covarrubias
  */
-public class CanvasProgressViewer extends Canvas {
+public class EnrollmentProgressViewer extends Canvas  {
     private Color mBackground = new Color(0.2, 0.3, 0.3, 1);
     private Color mFilledBall = new Color(0.2, 0.8, 0.2, 1.0);
     private Color mEmptyBall = new Color(0.2, 0.5, 0.5, 1.0);
@@ -52,12 +48,52 @@ public class CanvasProgressViewer extends Canvas {
     private Color mTextColor = new Color(1,1,1,1);
     private int mTotalProgress = 0;
     private int mProgress = 0;
+    private Reader mReader;
+    private EnrollmentDispatcher mDispatcher;
     
-    
-    public CanvasProgressViewer(int total){
-        mTotalProgress = total;
+    public EnrollmentProgressViewer(){
+        
+    }
+    public EnrollmentProgressViewer(Reader reader){
+        mReader= reader;
+        mDispatcher = new EnrollmentDispatcher(reader);
+        mDispatcher.addListener(new EnrollmentDispatcher.EnrollmentListener() {
+            @Override
+            public void onStart(Reader reader) {
+                
+            }
+
+            @Override
+            public void onCapture(Reader reader, EnrollResult result) {
+                
+            }
+
+            @Override
+            public void onClose(Reader reader) {
+                
+            }
+        });
     }
     
+    public void setReader(Reader reader){
+        mReader = reader;
+    }
+    
+    public void start(){
+        mDispatcher.start();
+    }
+    public void stop(){
+        mDispatcher.stop();
+    }
+    
+   
+    public void setTotalProgress(int value){
+        mTotalProgress = value;
+        if (mProgress > mTotalProgress){
+            mProgress = mTotalProgress;
+        }
+        updateDraw();
+    }
     public void setProgress(int value){
         if (mTotalProgress < value){
             mProgress = mTotalProgress;

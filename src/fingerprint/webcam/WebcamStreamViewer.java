@@ -25,9 +25,7 @@ package fingerprint.webcam;
 
 import com.github.sarxos.webcam.Webcam;
 import fingerprint.app.CanvasImageViewer;
-import java.awt.Dimension;
 import java.awt.image.BufferedImage;
-import java.nio.ByteBuffer;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 
