@@ -88,7 +88,7 @@ public class MainAppController implements Initializable {
         
         btnRegister.setOnAction((event) -> {
             EnrollmentDialog enrollDialog = new EnrollmentDialog();
-            enrollDialog.showDialog();
+            enrollDialog.showDialog(btnRegister.getScene().getWindow());
         });
     }    
     

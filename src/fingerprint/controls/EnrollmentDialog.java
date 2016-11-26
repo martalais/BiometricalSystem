@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
@@ -46,10 +47,14 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
+import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.stage.Window;
 import javax.imageio.ImageIO;
+import uaz.fingerprint.EnrollResult;
 
 import uaz.fingerprint.Reader;
+import uaz.fingerprint.ReaderListener;
 
 /**
  * FXML Controller class
@@ -75,10 +80,8 @@ public class EnrollmentDialog extends Stage implements Initializable {
         setTitle("Escaneo de huella digital");
     }
     
-    public void showDialog(){
-        Reader.init();
+    public void showDialog(Window parent){
         List<Reader> list = Reader.listDevices();
-       
         if (list != null){            
             ObservableList<Reader> devices = FXCollections.observableArrayList(list);
             cmbDevices.setItems(devices);
@@ -89,24 +92,69 @@ public class EnrollmentDialog extends Stage implements Initializable {
                 }
             });
         }
-        
-        this.show();
-        Reader.exit();
+        this.initOwner(parent);
+        this.initModality(Modality.WINDOW_MODAL);
+        this.showAndWait();
     }
     
+    private void setStatus(String message, int state){
+        lblStatus.setText(message);
+    }
     private void initReader(Reader reader){
         //Desabilitamos la seleccion de dispositvos mientras estemos usando el actual
         cmbDevices.setDisable(true);
         if (mEnrollmentViewer != null){
-            mEnrollmentViewer.stop();
+            mEnrollmentViewer.getReader().stop();
         }
+       
+         
         //Creamos el control asociado al reader
         mEnrollmentViewer = new EnrollmentProgressViewer(reader);
+        reader.addListener(new ReaderListener(){
+            @Override
+            public void onStart(Reader reader) {
+                System.out.println("Reader start()");
+                Platform.runLater(() -> {
+                    setStatus("El scaner esta listo para procesar su huella", 0);
+                });
+            }
+                    
+            @Override
+            public void onCapture(Reader reader, EnrollResult result) {
+                if (result.getCode() == EnrollResult.COMPLETE){
+                
+                }
+                if (result.getCode() == EnrollResult.PASS){
+                    Platform.runLater(() -> {
+                        setStatus("El escaneo fue exitoso, coloca tu dedo en el lector otra vez", 1);
+                    });
+                }
+                else if (result.getCode() == EnrollResult.FAIL){
+                    Platform.runLater(() -> {
+                        setStatus("El escaneo falló por completo, reinicie el proceso de escaneo por favor", 2);
+                    });
+                }
+                else{
+                    
+                }
+            }
+
+            @Override
+            public void onClose(Reader reader) {
+                
+            }
+        });
+        reader.start();
         //Agregamos el visor de los enrolls
         VBox.setVgrow(mEnrollmentViewer, Priority.ALWAYS);
         VBox.setMargin(mEnrollmentViewer, new Insets(20));
-        boxProgressContainer.getChildren().remove(1);
-        boxProgressContainer.getChildren().add(1, mEnrollmentViewer);
+        boxProgressContainer.getChildren().remove(2);
+        boxProgressContainer.getChildren().add(2, mEnrollmentViewer);
+        
+        this.setOnCloseRequest((event) -> {
+            mEnrollmentViewer.getReader().stop();
+        });
+        
     }
     /**
      * Initializes the controller class.
@@ -125,8 +173,6 @@ public class EnrollmentDialog extends Stage implements Initializable {
         }
         VBox.setVgrow(mImageViewer, Priority.ALWAYS);
         boxImageContainer.getChildren().add(mImageViewer);
-        lblStatus.setText("Hola mundo");
-        
         
     }    
     

@@ -23,6 +23,8 @@
  */
 package fingerprint.controls;
 
+import java.util.ArrayList;
+import javafx.application.Platform;
 import javafx.geometry.VPos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
@@ -34,6 +36,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import uaz.fingerprint.EnrollResult;
 import uaz.fingerprint.Reader;
+import uaz.fingerprint.ReaderListener;
 
 /**
  *
@@ -48,45 +51,84 @@ public class EnrollmentProgressViewer extends Canvas  {
     private Color mTextColor = new Color(1,1,1,1);
     private int mTotalProgress = 0;
     private int mProgress = 0;
+    private int mStatus = 0;
     private Reader mReader;
-    private EnrollmentDispatcher mDispatcher;
+    private ArrayList<EnrollResult> mSamples;
     
-    public EnrollmentProgressViewer(){
-        
+    public void increment(int val){
+        setProgress(mProgress + val);
+    }
+    
+    public void setStatus(int status){
+        mStatus = status;
+        updateDraw();
     }
     public EnrollmentProgressViewer(Reader reader){
         mReader= reader;
-        mDispatcher = new EnrollmentDispatcher(reader);
-        mDispatcher.addListener(new EnrollmentDispatcher.EnrollmentListener() {
+        mSamples = new ArrayList<>();
+        reader.addListener(new ReaderListener() {
             @Override
             public void onStart(Reader reader) {
-                
+                Platform.runLater(() -> {
+                    mSamples.clear();
+                    setStatus(0);
+                    setTotalProgress(reader.getNumberEnrollStages());                    
+                });
             }
 
             @Override
             public void onCapture(Reader reader, EnrollResult result) {
-                
+                if (result.getCode() == EnrollResult.COMPLETE){
+                    //Draw progress
+                     Platform.runLater(() -> {
+                        mSamples.add(result);
+                        increment(1);
+                    });
+                }
+                else if(result.getCode() == EnrollResult.PASS){
+                    //Draw progress
+                    Platform.runLater(() -> {
+                        mSamples.add(result);
+                        increment(1);
+                    });
+                    
+                }
+                else if (result.getCode() == EnrollResult.FAIL){
+                    //Draw all ball with red status
+                     Platform.runLater(() -> {
+                         mSamples.clear();
+                         setStatus(1);
+                         setProgress(0);
+                    });
+                }
+                else{
+                    //Draw next ball with red status
+                     Platform.runLater(() -> {
+                         setStatus(2);
+                    });
+                }
             }
 
             @Override
             public void onClose(Reader reader) {
-                
+               //Draw next ball with red status
+                Platform.runLater(() -> {
+                    mSamples.clear();
+                    setStatus(0);
+                    setProgress(0);
+               });
             }
         });
     }
     
     public void setReader(Reader reader){
         mReader = reader;
+    }  
+
+    public Reader getReader(){
+        return mReader;
     }
     
-    public void start(){
-        mDispatcher.start();
-    }
-    public void stop(){
-        mDispatcher.stop();
-    }
-    
-   
     public void setTotalProgress(int value){
         mTotalProgress = value;
         if (mProgress > mTotalProgress){
@@ -158,7 +200,7 @@ public class EnrollmentProgressViewer extends Canvas  {
         double width = getWidth();
         double height = getHeight();
         double spaceRatio = 0.3; //Relacion del espacio respecto a las bolitas
-        double circleSize = width / ((mTotalProgress + 2) * spaceRatio + mTotalProgress);
+        double circleSize = width / ((mTotalProgress + 1) * spaceRatio + mTotalProgress);
         double boxWidth = width;
         double boxHeight = circleSize + 2 * circleSize * spaceRatio;
         double boxRatio = boxWidth / boxHeight;
@@ -166,20 +208,20 @@ public class EnrollmentProgressViewer extends Canvas  {
         if (boxHeight > height){
             boxHeight = height;
             boxWidth = boxHeight  * boxRatio;            
-            circleSize = boxWidth / ((mTotalProgress + 2) * spaceRatio + mTotalProgress);
+            circleSize = boxWidth / ((mTotalProgress + 1) * spaceRatio + mTotalProgress);
         }
         double x = (width - boxWidth) / 2;
         double y = (height - boxHeight) / 2;
         
         gc.save();
         gc.clearRect(0, 0, width, height);
-        
+       
         Font font = new Font("Arial", 16);     
         gc.setFont(font);
         gc.setTextAlign(TextAlignment.CENTER);
         gc.setTextBaseline(VPos.CENTER);
         gc.setFill(mBackground);
-        
+        gc.fillRect(0, 0, width, height);
         gc.setEffect(mInnerShadow);
         gc.fillRoundRect(x, y, boxWidth, boxHeight, circleSize / 2, circleSize / 2);
         
