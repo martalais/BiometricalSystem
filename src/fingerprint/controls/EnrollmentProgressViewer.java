@@ -44,6 +44,7 @@ import uaz.fingerprint.ReaderListener;
  */
 public class EnrollmentProgressViewer extends Canvas  {
     private Color mBackground = new Color(0.2, 0.3, 0.3, 1);
+    private Color mFailBall = new Color(0.8, 0.2, 0.2, 1.0);
     private Color mFilledBall = new Color(0.2, 0.8, 0.2, 1.0);
     private Color mEmptyBall = new Color(0.2, 0.5, 0.5, 1.0);
     private Effect mInnerShadow = new InnerShadow(5.0, Color.BLACK);
@@ -68,7 +69,7 @@ public class EnrollmentProgressViewer extends Canvas  {
         mSamples = new ArrayList<>();
         reader.addListener(new ReaderListener() {
             @Override
-            public void onStart(Reader reader) {
+            public void onStartCapture(Reader reader) {
                 Platform.runLater(() -> {
                     mSamples.clear();
                     setStatus(0);
@@ -82,6 +83,7 @@ public class EnrollmentProgressViewer extends Canvas  {
                     //Draw progress
                      Platform.runLater(() -> {
                         mSamples.add(result);
+                        setStatus(0);
                         increment(1);
                     });
                 }
@@ -89,6 +91,7 @@ public class EnrollmentProgressViewer extends Canvas  {
                     //Draw progress
                     Platform.runLater(() -> {
                         mSamples.add(result);
+                        setStatus(0);
                         increment(1);
                     });
                     
@@ -110,13 +113,23 @@ public class EnrollmentProgressViewer extends Canvas  {
             }
 
             @Override
-            public void onClose(Reader reader) {
+            public void onStopCapture(Reader reader) {
                //Draw next ball with red status
                 Platform.runLater(() -> {
                     mSamples.clear();
                     setStatus(0);
                     setProgress(0);
                });
+            }
+
+            @Override
+            public void onClose(Reader reader) {
+                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+
+            @Override
+            public void onOpen(Reader reader) {
+                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
             }
         });
     }
@@ -221,27 +234,48 @@ public class EnrollmentProgressViewer extends Canvas  {
         gc.setTextAlign(TextAlignment.CENTER);
         gc.setTextBaseline(VPos.CENTER);
         gc.setFill(mBackground);
-        gc.fillRect(0, 0, width, height);
         gc.setEffect(mInnerShadow);
         gc.fillRoundRect(x, y, boxWidth, boxHeight, circleSize / 2, circleSize / 2);
         
        
-        gc.setEffect(mDropShadow);
-        for (int i = 0; i < mProgress; i++){
-            double nX = x + (i+1) * circleSize * spaceRatio + i* circleSize;
-            double nY = y + circleSize * spaceRatio;
-            gc.setFill(mFilledBall);
-            gc.fillOval(nX, nY, circleSize, circleSize);
-            gc.setFill(mTextColor);
-            gc.fillText("" + (1+i), nX + circleSize/2, nY + circleSize/2);
+        //Fallo por completo el enroll, dibujamos todos los circulos en rojo
+        gc.setFill(mFailBall);
+        
+        if (mStatus == 1){
+            gc.setEffect(mDropShadow);
+            for (int i = 0; i < mTotalProgress; i++){
+                double nX = x + (i+1) * circleSize * spaceRatio + i* circleSize;
+                double nY = y + circleSize * spaceRatio;
+                gc.fillOval(nX, nY, circleSize, circleSize);
+            }
         }
-        gc.setFill(mEmptyBall);
-        gc.setEffect(mInnerShadow);
-        for (int i = mProgress; i < mTotalProgress; i++){
-            double nX = x + (i+1) * circleSize * spaceRatio + i* circleSize;
-            double nY = y + circleSize * spaceRatio;
-            gc.fillOval(nX, nY, circleSize, circleSize);
+        else{
+            gc.setEffect(mDropShadow);
+            for (int i = 0; i < mProgress; i++){
+                double nX = x + (i+1) * circleSize * spaceRatio + i* circleSize;
+                double nY = y + circleSize * spaceRatio;
+                gc.setFill(mFilledBall);
+                gc.fillOval(nX, nY, circleSize, circleSize);
+                gc.setFill(mTextColor);
+                gc.fillText("" + (1+i), nX + circleSize/2, nY + circleSize/2);
+            }
+          
+            gc.setFill(mEmptyBall);
+            gc.setEffect(mInnerShadow);
+            for (int i = mProgress; i < mTotalProgress; i++){
+                double nX = x + (i+1) * circleSize * spaceRatio + i* circleSize;
+                double nY = y + circleSize * spaceRatio;
+                if (mStatus == 2 && i == mProgress){
+                    gc.setFill(mFailBall);
+                }
+                else{
+                    gc.setFill(mEmptyBall);
+                }
+                gc.fillOval(nX, nY, circleSize, circleSize);
+            }
+           
         }
+       
         gc.restore();
     }
 

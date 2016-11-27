@@ -112,7 +112,7 @@ public class EnrollmentDialog extends Stage implements Initializable {
         mEnrollmentViewer = new EnrollmentProgressViewer(reader);
         reader.addListener(new ReaderListener(){
             @Override
-            public void onStart(Reader reader) {
+            public void onStartCapture(Reader reader) {
                 System.out.println("Reader start()");
                 Platform.runLater(() -> {
                     setStatus("El scaner esta listo para procesar su huella", 0);
@@ -142,6 +142,16 @@ public class EnrollmentDialog extends Stage implements Initializable {
             @Override
             public void onClose(Reader reader) {
                 
+            }
+
+            @Override
+            public void onStopCapture(Reader reader) {
+                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+
+            @Override
+            public void onOpen(Reader reader) {
+                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
             }
         });
         reader.start();

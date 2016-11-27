@@ -2,10 +2,9 @@ package uaz.fingerprint;
 
 import java.util.ArrayList;
 import java.io.*;
-
 import uaz.nativeutils.*;
 
-public class Reader {
+public class Reader implements NativeReaderCallback{
 
     public static int FP_VERIFY_NO_MATCH = 0;
     public static int FP_VERIFY_MATCH = 1;
@@ -17,59 +16,78 @@ public class Reader {
 
     //Puntero C que hace referencia al dispositivo cuando se abre y que habilitan las operaciones de este.
     private long mDeviceHandle;
+    //Puntero C que hace referencia un AsynCaptureData para este objeto
+    private long mAsynCaptureData;
     
     //Variable que indicara si este dispositivo esta abierto para leer de el
     private boolean mIsOpened = false;
-    private Dispatcher mDispatcher = new Dispatcher();
+    private final ReaderDispatcher mDispatcher;
     private ArrayList<ReaderListener> mListeners;
+    private ArrayList<ReaderListener> mCaptureListeners;
+    private Thread mThread;
     
-    public void open(){
-        nativeOpen();
-        mIsOpened = true;
+    
+    public native void nativeOpen();
+    public native void nativeClose();
+    public native EnrollResult nativeGetCapture();
+    public native void nativeStartCapture(NativeReaderCallback callback, Object usarData);
+    public native void nativeStopCapture(NativeReaderCallback callback, Object userData);
+    public native int nativeHandleEvents();
+    public native EnrollResult nativeEnrollFinger();
+     
+     @Override
+    public void onCapture(EnrollResult result, Object userData) {
+        System.out.println("Imagen obtenida");
+        synchronized(mCaptureListeners){
+            for(ReaderListener listener: mCaptureListeners){
+                listener.onCapture(this, result);
+            }
+        }
+    }
+
+    @Override
+    public void onCaptureStop(Object userData) {
+        System.out.println("Captura detenida");
+        synchronized(mCaptureListeners){
+            for (ReaderListener listener: mCaptureListeners){
+                listener.onStopCapture(this);
+            }
+        }
+    }
+    
+    /**
+     * Inicia el proceso de captura de huellas en el dispositivo, puede ser llamado desde cualquier hilo
+     */
+    public void startCapture(){
+        mDispatcher.sendMessage(new Message(Message.START_CAPTURE, 1));
+    }
+    
+    public void stopCapture(){
+        mDispatcher.sendMessage(new Message(Message.STOP_CAPTURE, 1));
+    }
+    
+    
+    public void open(){        
+        if (mThread == null){
+            mThread = new Thread(mDispatcher);
+            mThread.start();
+        }
+        mDispatcher.sendMessage(new Message(Message.OPEN, 0));
     }
     public void close(){
-        mIsOpened = false;
-        nativeClose();
+        mDispatcher.sendMessage(new Message(Message.CLOSE, 0));
     }
     
   
-    
     public synchronized  EnrollResult enrollFinger(){
-        if (!mDispatcher.mIsRunning){
-            return enrollFinger2();
-        }
-        else{
-            final ArrayList<EnrollResult> result = new ArrayList<>();
-            ReaderListener listener = new ReaderListener() {
-                @Override
-                public void onStart(Reader reader) {}
-
-                @Override
-                public void onCapture(Reader reader, EnrollResult enrollment) {    
-                    result.add(enrollment);
-                }
-                                
-                @Override
-                public void onClose(Reader reader) {}
-            };
-            this.addListener(listener);
-            while(result.size() == 0 && mDispatcher.mIsRunning){
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException ex) {}
-            }
-            if (result.size() == 0){
-                return enrollFinger2();
-            }
-            else{
-                return result.remove(0);
-            }
-        }
+        return null;
     }
     
     
     public Reader(){
+        mDispatcher = new ReaderDispatcher(this, this);
         mListeners = new ArrayList<ReaderListener>();
+        mCaptureListeners = new ArrayList<>();
         System.out.println("Reader::init");
     }
     public void addListener(ReaderListener listener) {
@@ -77,63 +95,27 @@ public class Reader {
             mListeners.add(listener);
         }
     }
-
+    
+    public void addCaptureListener(ReaderListener listener){
+        synchronized(mCaptureListeners){
+            mCaptureListeners.add(listener);
+        }
+    }
+    
     public void removeListener(ReaderListener listener) {
         synchronized (mListeners) {
             mListeners.add(listener);
         }
     }
 
-    private class Dispatcher implements Runnable {
-
-        private boolean mStop = false;
-        private boolean mIsRunning = false;
-
-        public void stop() {
-            mStop = true;
-            Reader.this.close();
-        }
-
-        public void run() {
-            mStop = false;
-            mIsRunning = true;
-            Reader.this.open();
-            synchronized (mListeners) {
-                for (ReaderListener listener : mListeners) {
-                    listener.onStart(Reader.this);
-                }
-            }
-
-            while (!mStop) {
-                EnrollResult result = Reader.this.enrollFinger2();
-                synchronized (mListeners) {
-                    for (ReaderListener listener : mListeners) {
-                        listener.onCapture(Reader.this, result);
-                    }
-                }
-            }
-            synchronized (mListeners) {
-                for (ReaderListener listener : mListeners) {
-                    listener.onClose(Reader.this);
-                }
-            }
-            
-            mIsRunning = false;
-        }
-    }
+   
 
     public synchronized void start() {
-       //El despachador de eventos no esta corriendo, creamos un nuevo thread q lo haga
-       if (!mDispatcher.mIsRunning){
-           new Thread(mDispatcher).start();
-       }
-       
+      
     }
 
     public synchronized void stop() {
-        if (mDispatcher.mIsRunning){
-            mDispatcher.stop();
-        }
+        
     }
 
     //fp_init
@@ -189,13 +171,7 @@ public class Reader {
 		 	Searches a list of discovered devices for a device that appears to be compatible with a discovered print. 
 
      */
-    public native void nativeOpen();
-
-    public native void nativeClose();
-
-    private native EnrollResult enrollFinger2();
-
-    public native EnrollResult getSample();
+    
 
     public native int getNumberEnrollStages();
 
