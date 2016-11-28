@@ -6,4 +6,5 @@ public interface ReaderListener{
 	public void onStopCapture(Reader reader);
         public void onOpen(Reader reader);
         public void onClose(Reader reader);
+        public void onError(Reader reader, int code);
 }

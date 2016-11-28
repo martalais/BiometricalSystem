@@ -28,6 +28,11 @@ package uaz.fingerprint;
  * @author xmbeat
  */
 public interface  NativeReaderCallback  {
-    public void onCapture(EnrollResult result, Object userData);
-    public void onCaptureStop(Object userData);
+    public void onCaptureStart(Object userData);
+    public void onCapture(EnrollResult result, Object msg);
+    public void onCaptureStop(Object msg);    
+    public void onClose(Object msg);
+    public void onOpen(Object msg);
+    public void onGetEnrollStages(int enrollStages, Object msg);
+    public void onError(Object msg);
 }

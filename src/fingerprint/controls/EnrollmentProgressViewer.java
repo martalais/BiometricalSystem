@@ -23,18 +23,21 @@
  */
 package fingerprint.controls;
 
-import java.util.ArrayList;
+import java.awt.image.BufferedImage;
 import javafx.application.Platform;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.VPos;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.effect.Effect;
 import javafx.scene.effect.InnerShadow;
+import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import uaz.fingerprint.EnrollResult;
+import uaz.fingerprint.FingerprintImage;
 import uaz.fingerprint.Reader;
 import uaz.fingerprint.ReaderListener;
 
@@ -48,13 +51,14 @@ public class EnrollmentProgressViewer extends Canvas  {
     private Color mFilledBall = new Color(0.2, 0.8, 0.2, 1.0);
     private Color mEmptyBall = new Color(0.2, 0.5, 0.5, 1.0);
     private Effect mInnerShadow = new InnerShadow(5.0, Color.BLACK);
-    private Effect mDropShadow = new DropShadow(5.0, Color.BLACK);  
+    private Effect mDropShadow = new DropShadow(5.0, Color.BLACK);
+    private Effect mImageShadow = new DropShadow(5.0, mFilledBall);
     private Color mTextColor = new Color(1,1,1,1);
     private int mTotalProgress = 0;
     private int mProgress = 0;
     private int mStatus = 0;
     private Reader mReader;
-    private ArrayList<EnrollResult> mSamples;
+    private WritableImage[] mThumbs;
     
     public void increment(int val){
         setProgress(mProgress + val);
@@ -66,31 +70,50 @@ public class EnrollmentProgressViewer extends Canvas  {
     }
     public EnrollmentProgressViewer(Reader reader){
         mReader= reader;
-        mSamples = new ArrayList<>();
         reader.addListener(new ReaderListener() {
             @Override
+            public void onError(Reader reader, int code){
+                Platform.runLater(() -> {                    
+                    setStatus(1);
+                    setProgress(0);
+                });
+            }
+            @Override
             public void onStartCapture(Reader reader) {
-                Platform.runLater(() -> {
-                    mSamples.clear();
+                System.out.println("EPV:OnStartCapture()");
+                Platform.runLater(() -> {                    
                     setStatus(0);
-                    setTotalProgress(reader.getNumberEnrollStages());                    
+                    setTotalProgress(reader.getNumberEnrollStages());
+                    setProgress(0);
+                    mThumbs = new WritableImage[mTotalProgress];
                 });
             }
 
             @Override
             public void onCapture(Reader reader, EnrollResult result) {
-                if (result.getCode() == EnrollResult.COMPLETE){
+                
+                if (result.getCode() != EnrollResult.FAIL){
+                    
+                    if (result.getImage() != null ){
+                        FingerprintImage img = result.getImage();
+                        BufferedImage bimg = img.toBufferedImage();
+                        WritableImage thumb = SwingFXUtils.toFXImage(bimg, null);
+                        mThumbs[mProgress] = thumb;
+                    }
+                    else{
+                        mThumbs[mProgress] = null;
+                    }
+                }
+                if (result.getCode() == EnrollResult.COMPLETE ){
                     //Draw progress
                      Platform.runLater(() -> {
-                        mSamples.add(result);
                         setStatus(0);
                         increment(1);
                     });
                 }
-                else if(result.getCode() == EnrollResult.PASS){
+                else if(result.getCode() == EnrollResult.PASS ){
                     //Draw progress
                     Platform.runLater(() -> {
-                        mSamples.add(result);
                         setStatus(0);
                         increment(1);
                     });
@@ -98,8 +121,7 @@ public class EnrollmentProgressViewer extends Canvas  {
                 }
                 else if (result.getCode() == EnrollResult.FAIL){
                     //Draw all ball with red status
-                     Platform.runLater(() -> {
-                         mSamples.clear();
+                     Platform.runLater(() -> {                         
                          setStatus(1);
                          setProgress(0);
                     });
@@ -110,21 +132,21 @@ public class EnrollmentProgressViewer extends Canvas  {
                          setStatus(2);
                     });
                 }
+                
+                
             }
 
             @Override
             public void onStopCapture(Reader reader) {
-               //Draw next ball with red status
-                Platform.runLater(() -> {
-                    mSamples.clear();
-                    setStatus(0);
-                    setProgress(0);
-               });
+                
             }
 
             @Override
             public void onClose(Reader reader) {
-                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+                Platform.runLater(() -> {                    
+                    setStatus(0);
+                    setProgress(0);
+                });
             }
 
             @Override
@@ -215,7 +237,7 @@ public class EnrollmentProgressViewer extends Canvas  {
         double spaceRatio = 0.3; //Relacion del espacio respecto a las bolitas
         double circleSize = width / ((mTotalProgress + 1) * spaceRatio + mTotalProgress);
         double boxWidth = width;
-        double boxHeight = circleSize + 2 * circleSize * spaceRatio;
+        double boxHeight = circleSize * 2 + 3 * circleSize * spaceRatio;
         double boxRatio = boxWidth / boxHeight;
         //Si se necesita mas ancho que el que hay disponible, redimensionamos las medidas respecto al ancho disponible
         if (boxHeight > height){
@@ -238,26 +260,35 @@ public class EnrollmentProgressViewer extends Canvas  {
         gc.fillRoundRect(x, y, boxWidth, boxHeight, circleSize / 2, circleSize / 2);
         
        
-        //Fallo por completo el enroll, dibujamos todos los circulos en rojo
-        gc.setFill(mFailBall);
         
+        gc.setFill(mFailBall);
+        //Fallo por completo el enroll, dibujamos todos los circulos en rojo
         if (mStatus == 1){
             gc.setEffect(mDropShadow);
             for (int i = 0; i < mTotalProgress; i++){
                 double nX = x + (i+1) * circleSize * spaceRatio + i* circleSize;
                 double nY = y + circleSize * spaceRatio;
-                gc.fillOval(nX, nY, circleSize, circleSize);
+                gc.fillOval(nX, nY, circleSize, circleSize);      
             }
         }
         else{
-            gc.setEffect(mDropShadow);
+            
             for (int i = 0; i < mProgress; i++){
                 double nX = x + (i+1) * circleSize * spaceRatio + i* circleSize;
                 double nY = y + circleSize * spaceRatio;
+                gc.setEffect(mDropShadow);
                 gc.setFill(mFilledBall);
                 gc.fillOval(nX, nY, circleSize, circleSize);
                 gc.setFill(mTextColor);
-                gc.fillText("" + (1+i), nX + circleSize/2, nY + circleSize/2);
+                gc.fillText("" + (1+i), nX + circleSize/2, nY + circleSize/2);               
+                
+                
+                if (mThumbs != null && mThumbs[i]!=null){
+                    gc.setEffect(mImageShadow);
+                    nY = nY + circleSize + circleSize * spaceRatio;
+                    gc.fillRect(nX-1, nY-1, circleSize + 2, circleSize + 2);
+                    gc.drawImage(mThumbs[i], nX, nY, circleSize, circleSize);
+                }
             }
           
             gc.setFill(mEmptyBall);
@@ -275,6 +306,7 @@ public class EnrollmentProgressViewer extends Canvas  {
             }
            
         }
+        
        
         gc.restore();
     }

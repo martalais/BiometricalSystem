@@ -35,12 +35,15 @@ public class ReaderDispatcher implements Runnable{
     final Reader mReader;
     final NativeReaderCallback mCallback;
     private boolean mIsCapturing;
-
-    public void sendMessage(Message msg){
+    private boolean mIsEnrolling;
+    private boolean mIsOpen;
+    public boolean sendMessage(Message msg){
         synchronized(mQueue){
             if (!mQueue.contains(msg))
-                mQueue.add(msg);
+                return mQueue.add(msg);
+            return false;
         }
+        
     }        
     private Message pickMessage(){
         synchronized(mQueue){
@@ -51,39 +54,108 @@ public class ReaderDispatcher implements Runnable{
         mReader = reader;
         mCallback = callback;
         mIsCapturing = false;
+        mIsEnrolling = false;
+        mIsOpen = false;
     }
     @Override
     public void run() {
-        while(true){
+        loop: while(true){
             Message msg = pickMessage();
-            if (msg != null){
+            if (msg != null ){
+                System.out.println("Procesando Mensaje:" +msg.mCode + " \t" + Thread.currentThread().getName());
                 switch (msg.mCode) {
                     case Message.START_CAPTURE:
-                        mIsCapturing = true;
-                        mReader.nativeStartCapture(mCallback, msg);
+                        if (!mIsCapturing && !mIsEnrolling && mIsOpen){
+                            if (mReader.nativeStartCapture(mCallback, msg) < 0){
+                                mCallback.onError(msg);
+                            }
+                            else{
+                                mIsCapturing = true;
+                                mCallback.onCaptureStart(msg);
+                            }
+                        }
                         break;
                     case Message.STOP_CAPTURE:
                         if (mIsCapturing){
-                            mReader.nativeStopCapture(mCallback, msg);
+                            if (mReader.nativeStopCapture(mCallback, msg) < 0){
+                                mCallback.onError(msg);
+                            }
                             mIsCapturing = false;
                         }
                         break;
+                    case Message.START_ENROLLMENT:
+                        if (!mIsCapturing && !mIsEnrolling && mIsOpen){
+                            if (mReader.nativeStartEnrollment(mCallback, msg) < 0){
+                                mCallback.onError(msg);
+                            }
+                            else{
+                                mCallback.onCaptureStart(msg);
+                                mIsEnrolling = true;
+                            }                            
+                        }
+                        break;
+                    case Message.STOP_ENROLLMENT:
+                        if (mIsEnrolling){
+                            if (mReader.nativeStopEnrollment(mCallback, mReader) < 0){
+                                mCallback.onError(msg);
+                            }
+                        }                        
+                        mIsEnrolling = false;
+                        break;
                     case Message.OPEN:
-                        mReader.nativeOpen();
+                        if (!mIsOpen){
+                            if (mReader.nativeOpen()  < 0){
+                                mCallback.onError(msg);
+                            }
+                            else{
+                                mIsOpen = true;
+                                mCallback.onOpen(msg);
+                            }                            
+                        }                        
                         break;
                     case Message.CLOSE:
-                        mIsCapturing = false;
-                        mReader.nativeClose();
+                        if (mIsEnrolling){
+                            this.sendMessage(new Message(Message.STOP_ENROLLMENT, 0));
+                            this.sendMessage(msg);
+                        }
+                        else if (mIsCapturing){
+                            this.sendMessage(new Message(Message.STOP_CAPTURE, 0));
+                            this.sendMessage(msg);
+                        }
+                        else if (mIsOpen){ 
+                            if (mReader.nativeClose() < 0){
+                                mCallback.onError(msg);
+                            }else{
+                                mIsOpen = false;
+                                mCallback.onClose(msg);       
+                            }
+                        }
                         break;
+                    case Message.CLOSE_DISPATCHER:
+                        if (mIsOpen){
+                            mReader.nativeClose();
+                        }
+                        break loop;
+                    case Message.GET_ENROLL_STAGES:
+                        if (mIsOpen){
+                            mCallback.onGetEnrollStages(mReader.nativeGetNumberEnrollStages(), msg);
+                        }
+                        else{
+                            //Necesitamos abrir el dispositvo primero para poder obtener informacion de el
+                            this.sendMessage(new Message(Message.OPEN, 0));
+                            this.sendMessage(new Message(Message.GET_ENROLL_STAGES, 1));
+                        }
+                        break;   
                     default:
                         break;
                 }
             }
-            if (mIsCapturing){
+            if (mIsOpen && (mIsCapturing || mIsEnrolling)){
                 mReader.nativeHandleEvents();
             }
-
         }
+        
+       
     }
 
 }
@@ -95,7 +167,10 @@ class Message implements Comparable<Message>{
         public static final int CLOSE = 2;
         public static final int START_CAPTURE = 3;
         public static final int STOP_CAPTURE = 4;
-        
+        public static final int START_ENROLLMENT = 5;
+        public static final int STOP_ENROLLMENT = 6;
+        public static final int GET_ENROLL_STAGES = 7;
+        public static final int CLOSE_DISPATCHER = 8;
         public Message(int code, int priority){
             mCode = code;
             mPriority = priority;
@@ -111,7 +186,7 @@ class Message implements Comparable<Message>{
         public boolean equals(Object obj ){
             if (obj != null && obj instanceof Message){
                 Message other = (Message) obj;
-                return mCode == other.mCode;
+                return mCode == other.mCode && mPriority == other.mPriority;
             }
             return false;
         }

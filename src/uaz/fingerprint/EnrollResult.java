@@ -1,5 +1,6 @@
 package uaz.fingerprint;
 public class EnrollResult{
+        public static int CAPTURE_COMPLETE = 0;
 	public static int COMPLETE = 1;
 	public static int FAIL = 2; 
 	public static int PASS = 3;

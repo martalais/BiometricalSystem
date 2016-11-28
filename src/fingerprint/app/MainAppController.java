@@ -37,6 +37,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javax.imageio.ImageIO;
+import uaz.fingerprint.EnrollResult;
 
 /**
  * FXML Controller class
@@ -88,7 +89,7 @@ public class MainAppController implements Initializable {
         
         btnRegister.setOnAction((event) -> {
             EnrollmentDialog enrollDialog = new EnrollmentDialog();
-            enrollDialog.showDialog(btnRegister.getScene().getWindow());
+            EnrollResult result = enrollDialog.showDialog(btnRegister.getScene().getWindow());
         });
     }    
     
