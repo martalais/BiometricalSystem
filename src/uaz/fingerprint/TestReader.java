@@ -8,9 +8,13 @@ public class TestReader implements ReaderListener{
 	public static void main(String args[]) throws InterruptedException{
             ArrayList<Reader> readers = Reader.listDevices();
             Reader reader = readers.get(0);
+            reader.setDaemon(false);
+            reader.addListener(new TestReader()); 
             reader.open();
-            System.out.println("EnrollStages: " + reader.getNumberEnrollStages());
-            reader.addListener(new TestReader());
+            Thread.sleep(1000);
+            System.out.println("Reader: " + reader.getDriverName());
+                   
+            System.out.println("Enroll stages: " +reader.getNumberEnrollStages() );
             reader.startEnrollment();
             
             System.out.println("Terminado");
@@ -29,7 +33,7 @@ public class TestReader implements ReaderListener{
 
     @Override
     public void onStopCapture(Reader reader) {
-        reader.startEnrollment();
+        //reader.startEnrollment();
     }
 
     @Override
@@ -44,7 +48,7 @@ public class TestReader implements ReaderListener{
     
     @Override
     public void onError(Reader reader, int code){
-        
+        System.out.println("On error: " + code);
     }
         
 }

@@ -24,6 +24,9 @@
 package uaz.fingerprint;
 
 import java.util.PriorityQueue;
+import java.util.TreeMap;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -32,24 +35,42 @@ import java.util.PriorityQueue;
  */
 public class ReaderDispatcher implements Runnable{
     final PriorityQueue<Message>  mQueue = new PriorityQueue<>();
+    final TreeMap<Message, MessageResult> mWaitingResults = new TreeMap<>();
     final Reader mReader;
     final NativeReaderCallback mCallback;
     private boolean mIsCapturing;
     private boolean mIsEnrolling;
     private boolean mIsOpen;
-    public boolean sendMessage(Message msg){
+    
+    public MessageResult sendMessage(Message msg){
+        boolean inserted = false;
         synchronized(mQueue){
             if (!mQueue.contains(msg))
-                return mQueue.add(msg);
-            return false;
+                inserted =  mQueue.add(msg);
+        }        
+        if (inserted && msg.mWaitable){
+            synchronized(mWaitingResults){
+                MessageResult result = null;
+                while((result = mWaitingResults.remove(msg)) == null){
+                    try {
+                        mWaitingResults.wait(100);
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(ReaderDispatcher.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+                return result;
+            }
         }
-        
-    }        
+        return null;
+    }
+
     private Message pickMessage(){
         synchronized(mQueue){
             return mQueue.poll();
         }
     }
+
+    
     public ReaderDispatcher(Reader reader, NativeReaderCallback callback){
         mReader = reader;
         mCallback = callback;
@@ -63,6 +84,8 @@ public class ReaderDispatcher implements Runnable{
             Message msg = pickMessage();
             if (msg != null ){
                 System.out.println("Procesando Mensaje:" +msg.mCode + " \t" + Thread.currentThread().getName());
+                Object ret = null;
+                int code = MessageResult.IGNORED;
                 switch (msg.mCode) {
                     case Message.START_CAPTURE:
                         if (!mIsCapturing && !mIsEnrolling && mIsOpen){
@@ -114,15 +137,7 @@ public class ReaderDispatcher implements Runnable{
                         }                        
                         break;
                     case Message.CLOSE:
-                        if (mIsEnrolling){
-                            this.sendMessage(new Message(Message.STOP_ENROLLMENT, 0));
-                            this.sendMessage(msg);
-                        }
-                        else if (mIsCapturing){
-                            this.sendMessage(new Message(Message.STOP_CAPTURE, 0));
-                            this.sendMessage(msg);
-                        }
-                        else if (mIsOpen){ 
+                        if (mIsOpen){ 
                             if (mReader.nativeClose() < 0){
                                 mCallback.onError(msg);
                             }else{
@@ -138,20 +153,42 @@ public class ReaderDispatcher implements Runnable{
                         break loop;
                     case Message.GET_ENROLL_STAGES:
                         if (mIsOpen){
-                            mCallback.onGetEnrollStages(mReader.nativeGetNumberEnrollStages(), msg);
+                            int result = mReader.nativeGetNumberEnrollStages();
+                            mCallback.onGetEnrollStages(result, msg);
                         }
                         else{
                             //Necesitamos abrir el dispositvo primero para poder obtener informacion de el
-                            this.sendMessage(new Message(Message.OPEN, 0));
-                            this.sendMessage(new Message(Message.GET_ENROLL_STAGES, 1));
+                            mCallback.onError(msg);
                         }
                         break;   
+                    case Message.GET_DRIVER_NAME:
+                        if (mIsOpen){
+                            String name = mReader.nativeGetDriverName();
+                            mCallback.onGetDriverName(name, msg);                            
+                            ret = name;
+                            code = MessageResult.SUCCESS;
+                        }
+                        else{
+                            mCallback.onError(msg);
+                            code = MessageResult.FAIL;
+                        }
+                        break;
                     default:
                         break;
                 }
+                
+                if (msg.mWaitable){
+                    MessageResult result = new MessageResult();
+                    result.code = code;
+                    result.result = ret;
+                    synchronized(mWaitingResults){
+                        mWaitingResults.put(msg, result);
+                        mWaitingResults.notify();
+                    }
+                }
             }
             if (mIsOpen && (mIsCapturing || mIsEnrolling)){
-                mReader.nativeHandleEvents();
+                mReader.nativeHandleEvents(0);
             }
         }
         
@@ -159,10 +196,17 @@ public class ReaderDispatcher implements Runnable{
     }
 
 }
-
+class MessageResult{
+    public final static int SUCCESS = 0;
+    public final static int FAIL = 1;
+    public final static int IGNORED = 2;
+    int code;
+    Object result;
+}
 class Message implements Comparable<Message>{
         public int mCode;
         public int mPriority;
+        public boolean mWaitable;
         public static final int OPEN = 1;
         public static final int CLOSE = 2;
         public static final int START_CAPTURE = 3;
@@ -170,10 +214,18 @@ class Message implements Comparable<Message>{
         public static final int START_ENROLLMENT = 5;
         public static final int STOP_ENROLLMENT = 6;
         public static final int GET_ENROLL_STAGES = 7;
-        public static final int CLOSE_DISPATCHER = 8;
-        public Message(int code, int priority){
+        public static final int GET_DRIVER_NAME = 8;
+        public static final int CLOSE_DISPATCHER = 9;
+        public static final int MESSAGE_LOW_PRIORITY = 10;
+        public static final int MESSAGE_NORMAL_PRIORITY = 5;
+        public static final int MESSAGE_HIGH_PRIORITY = 0;
+        public Message(int code, int priority, boolean waitable){
             mCode = code;
             mPriority = priority;
+            mWaitable = waitable;
+        }
+        public Message(int code, int priority){
+            this(code, priority, false);
         }
         @Override
         public int compareTo(Message other) {

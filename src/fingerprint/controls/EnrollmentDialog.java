@@ -88,6 +88,10 @@ public class EnrollmentDialog extends Stage implements Initializable {
     
     public EnrollResult showDialog(Window parent){
         List<Reader> list = Reader.listDevices();
+        list.forEach((t) -> {
+            t.open();
+            t.getDriverName();
+        });
         if (list != null){            
             ObservableList<Reader> devices = FXCollections.observableArrayList(list);
             cmbDevices.setItems(devices);
@@ -132,7 +136,7 @@ public class EnrollmentDialog extends Stage implements Initializable {
         cmbDevices.setDisable(true);
         //Si hay un visor de enrollamiento lo cerramos y quitamos del gestor
         if (mEnrollmentViewer != null){            
-            mEnrollmentViewer.getReader().close();            
+            mEnrollmentViewer.getReader().stopEnrollment();
         }       
         mResult = null;
         boxProgressContainer.getChildren().remove(2);
@@ -210,29 +214,7 @@ public class EnrollmentDialog extends Stage implements Initializable {
                 //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
             }
         });
-       
         
-        this.setOnCloseRequest((event) -> {
-            if (mEnrollmentViewer != null)
-                mEnrollmentViewer.getReader().close();
-        });
-        btnCancel.setOnAction((event) -> {           
-            if (mEnrollmentViewer != null)
-                mEnrollmentViewer.getReader().close();
-             mResult = null;
-             close();
-        });
-        btnAccept.setOnAction((event) -> {
-            
-            if (mResult != null){
-                if (mEnrollmentViewer != null)
-                    mEnrollmentViewer.getReader().close();
-                close();
-            }
-                
-        });
-        
-        reader.open();
         reader.startEnrollment();
     }
     /**
@@ -253,7 +235,26 @@ public class EnrollmentDialog extends Stage implements Initializable {
         VBox.setVgrow(mImageViewer, Priority.ALWAYS);
         boxImageContainer.getChildren().add(mImageViewer);
         setStatus("Seleccione un dispositivo de la lista", 3);
-        
+        this.setOnCloseRequest((event) -> {
+            if (mEnrollmentViewer != null)
+                mEnrollmentViewer.getReader().close();
+        });
+        btnCancel.setOnAction((event) -> {           
+            if (mEnrollmentViewer != null)
+                mEnrollmentViewer.getReader().close();
+             mResult = null;
+             close();
+             System.out.println("Terminando");
+        });
+        btnAccept.setOnAction((event) -> {
+            
+            if (mResult != null){
+                if (mEnrollmentViewer != null)
+                    mEnrollmentViewer.getReader().close();
+                close();
+            }
+                
+        });
     }    
     
 }

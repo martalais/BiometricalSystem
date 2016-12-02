@@ -40,7 +40,7 @@
                   <Pane prefHeight="116.0" prefWidth="478.0" VBox.vgrow="ALWAYS" />
                   <VBox fx:id="boxMessage" prefHeight="64.0" prefWidth="478.0" style="-fx-background-color: linear-gradient(to bottom, rgba(96,108,136,1) 0%,rgba(63,76,107,1) 100%);;">
                      <children>
-                        <Label fx:id="lblStatus" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="36.0" prefWidth="478.0" style="-fx-effect: dropshadow( two-pass-box , rgba(0,0,0,0.8) , 1, 0.0 , 1 , 1); -fx-font-weight: bold;" text="Hola mundo" textFill="WHITE" wrapText="true" VBox.vgrow="ALWAYS">
+                        <Label fx:id="lblStatus" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="93.0" prefWidth="478.0" style="-fx-effect: dropshadow( two-pass-box , rgba(0,0,0,0.8) , 1, 0.0 , 1 , 1); -fx-font-weight: bold;" text="Hola mundo" textFill="WHITE" wrapText="true" VBox.vgrow="ALWAYS">
                            <padding>
                               <Insets bottom="10.0" left="20.0" right="10.0" top="10.0" />
                            </padding>

@@ -93,16 +93,19 @@ public class EnrollmentProgressViewer extends Canvas  {
             public void onCapture(Reader reader, EnrollResult result) {
                 
                 if (result.getCode() != EnrollResult.FAIL){
+                    Platform.runLater(()->{
+                        if (result.getImage() != null ){
+                            FingerprintImage img = result.getImage();
+                            BufferedImage bimg = img.toBufferedImage();
+                            WritableImage thumb = SwingFXUtils.toFXImage(bimg, null);
+                            mThumbs[mProgress] = thumb;
+                        }
+                        else{
+                            mThumbs[mProgress] = null;
+                        }
                     
-                    if (result.getImage() != null ){
-                        FingerprintImage img = result.getImage();
-                        BufferedImage bimg = img.toBufferedImage();
-                        WritableImage thumb = SwingFXUtils.toFXImage(bimg, null);
-                        mThumbs[mProgress] = thumb;
-                    }
-                    else{
-                        mThumbs[mProgress] = null;
-                    }
+                    });
+                    
                 }
                 if (result.getCode() == EnrollResult.COMPLETE ){
                     //Draw progress

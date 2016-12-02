@@ -34,5 +34,6 @@ public interface  NativeReaderCallback  {
     public void onClose(Object msg);
     public void onOpen(Object msg);
     public void onGetEnrollStages(int enrollStages, Object msg);
+    public void onGetDriverName(String driverName, Object msg);
     public void onError(Object msg);
 }

@@ -23,13 +23,11 @@
  */
 package uaz.fingerprint;
 
-import java.io.IOException;
-
 /**
  *
  * @author Juan Hebert Chablé Covarrubias
  */
-public class ReaderException extends IOException{
+public class ReaderException extends RuntimeException{
     public ReaderException(String message){
         super(message);
     }

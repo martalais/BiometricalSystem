@@ -2,20 +2,17 @@ package uaz.fingerprint;
 
 import java.util.ArrayList;
 import java.io.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import uaz.nativeutils.*;
 
 public class Reader implements NativeReaderCallback{
 
     public static int FP_VERIFY_NO_MATCH = 0;
     public static int FP_VERIFY_MATCH = 1;
+    private String mDriverName;
     //Contador de referencias para la lista resultante dispositivos detectados (Lista proveniente desde codigo nativo)
     private DeviceLock mDeviceLock;
-
     //Puntero C a un elemento de la lista de los dispositivos
     private long mDevice;
-
     //Puntero C que hace referencia al dispositivo cuando se abre y que habilitan las operaciones de este.
     private long mDeviceHandle;
     //Puntero C que hace referencia un AsynCaptureData para este objeto
@@ -25,37 +22,52 @@ public class Reader implements NativeReaderCallback{
     private final ReaderDispatcher mDispatcher;
     private ArrayList<ReaderListener> mListeners;
     private int mEnrollStages = -1;
-    private boolean mIsOpen;
     private Thread mThread;
     
     
     public native int nativeOpen();
     public native int nativeClose();
+    public native String nativeGetDriverName();
     public native EnrollResult nativeGetCapture();
     public native int nativeGetNumberEnrollStages();
     public native int nativeStartCapture(NativeReaderCallback callback, Object usarData);
     public native int nativeStopCapture(NativeReaderCallback callback, Object userData);
     public native int nativeStartEnrollment(NativeReaderCallback callback, Object userData);
     public native int nativeStopEnrollment(NativeReaderCallback callback, Object userData);
-    public native int nativeHandleEvents();
+    public native int nativeHandleEvents(int timeout);
     public native EnrollResult nativeEnrollFinger();
     
     public void setDaemon(boolean value){
         mIsDaemon = value;
     }
+    public String getDriverName(){
+        if (mDriverName == null){
+           checkForDispatcher();
+           Message  msg = new Message(Message.GET_DRIVER_NAME, Message.MESSAGE_NORMAL_PRIORITY, true);
+           MessageResult result = mDispatcher.sendMessage(msg);
+           if (result.code == MessageResult.FAIL){
+               throw new ReaderException("El dispositivo no ha sido abierto, no se puede obtener informacion de éste");
+           }
+           else{
+               mDriverName = (String) result.result;
+           }
+        }
+        return mDriverName;
+    }
     
+ 
     public int getNumberEnrollStages(){
+        System.out.println("Here: " + mEnrollStages);
         if (mEnrollStages == -1){
             checkForDispatcher();
-            mDispatcher.sendMessage(new Message(Message.GET_ENROLL_STAGES, 1));
-            while(mEnrollStages == -1){
-                try {
-                    Thread.sleep(100);
-                } catch (InterruptedException ex) {
-                    Logger.getLogger(Reader.class.getName()).log(Level.SEVERE, null, ex);
-                }
+            Message msg = new Message(Message.GET_ENROLL_STAGES, Message.MESSAGE_NORMAL_PRIORITY, true);
+            MessageResult result = mDispatcher.sendMessage(msg);
+            if (result.code == MessageResult.SUCCESS){
+                Integer num = (Integer) result.result;
+                mEnrollStages = num.intValue();
             }
         }
+        System.out.println("Here");
         return mEnrollStages;
     }
     
@@ -66,7 +78,10 @@ public class Reader implements NativeReaderCallback{
             mThread.start();
         }
     }
-    
+    @Override
+    public void onGetDriverName(String name, Object userData){
+        mDriverName = name;
+    }
     @Override
     public void onGetEnrollStages(int enrollStages, Object userData) {
         mEnrollStages = enrollStages;
@@ -74,7 +89,6 @@ public class Reader implements NativeReaderCallback{
     
     @Override
     public void onCaptureStart(Object userData){
-        System.out.println("Reader::onCaptureStart()");
         synchronized(mListeners){
             for(ReaderListener listener: mListeners){
                 listener.onStartCapture(this);
@@ -83,14 +97,18 @@ public class Reader implements NativeReaderCallback{
     }
     
     @Override
-    public void onCapture(EnrollResult result, Object userData) {
-        System.out.println("Reader::onCapture(): " + result.getCode());
-        if (result.getCode() == EnrollResult.COMPLETE){
-            mDispatcher.sendMessage(new Message(Message.STOP_ENROLLMENT, 1));
+    public void onCapture(EnrollResult enroll, Object userData) {
+        
+        if (enroll.getCode() == EnrollResult.COMPLETE){
+            Message msg = new Message(Message.STOP_ENROLLMENT, Message.MESSAGE_NORMAL_PRIORITY);
+            MessageResult result = mDispatcher.sendMessage(msg);
+            if (result != null){
+                
+            }
         }
         synchronized(mListeners){
             for(ReaderListener listener: mListeners){
-                listener.onCapture(this, result);
+                listener.onCapture(this, enroll);
             }
         }
         
@@ -98,7 +116,6 @@ public class Reader implements NativeReaderCallback{
 
     @Override
     public void onCaptureStop(Object userData) {
-        System.out.println("Reader::onCaptureStop()");
         synchronized(mListeners){
             for (ReaderListener listener: mListeners){
                 listener.onStopCapture(this);
@@ -108,7 +125,6 @@ public class Reader implements NativeReaderCallback{
     
     @Override
     public void onOpen(Object userData){
-        System.out.println("Open");
         synchronized(mListeners){
             for (ReaderListener listener: mListeners){
                 listener.onOpen(this);
@@ -118,7 +134,6 @@ public class Reader implements NativeReaderCallback{
     
     @Override
     public void onClose(Object userData){
-        System.out.println("Close");
         synchronized(mListeners){
             for (ReaderListener listener: mListeners){
                 listener.onClose(this);
@@ -130,6 +145,12 @@ public class Reader implements NativeReaderCallback{
     public void onError(Object userData){
         Message msg = (Message) userData;
         System.out.println("Error al procesar este mensaje:" + msg.mCode);
+        if (msg.mCode == Message.GET_DRIVER_NAME){
+            mDriverName = "Dispositivo ocupado";
+        }
+        else if (msg.mCode == Message.GET_ENROLL_STAGES){
+            mEnrollStages = 0;
+        }
         synchronized(mListeners){
             for(ReaderListener listener: mListeners){
                 listener.onError(this, msg.mCode);
@@ -156,7 +177,11 @@ public class Reader implements NativeReaderCallback{
     
     public void open(){        
         checkForDispatcher();
-        mDispatcher.sendMessage(new Message(Message.OPEN, 1));
+        Message msg = new Message(Message.OPEN, Message.MESSAGE_NORMAL_PRIORITY, true);
+        MessageResult result = mDispatcher.sendMessage(msg);
+        if (result.code == MessageResult.FAIL){
+            throw new ReaderException("Otro proceso esta utilizando el disposito y no se puede tener acceso a este");
+        }
     }
     public void close(){
         mDispatcher.sendMessage(new Message(Message.CLOSE, 0));
@@ -198,7 +223,10 @@ public class Reader implements NativeReaderCallback{
     public static native ArrayList<Reader> listDevices();
 
     public String toString() {
-        return "Digital Persona U.are.U";
+        if (mDriverName != null){
+            return mDriverName;
+        }
+        return "Dispositivo no disponible";
     }
 
     public static Reader getDefault() {
