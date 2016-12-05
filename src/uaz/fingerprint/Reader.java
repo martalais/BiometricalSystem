@@ -2,6 +2,8 @@ package uaz.fingerprint;
 
 import java.util.ArrayList;
 import java.io.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import uaz.nativeutils.*;
 
 public class Reader implements NativeReaderCallback{
@@ -23,6 +25,7 @@ public class Reader implements NativeReaderCallback{
     private ArrayList<ReaderListener> mListeners;
     private int mEnrollStages = -1;
     private Thread mThread;
+    private final ArrayList<EnrollResult> mLastEnroll;
     
     
     public native int nativeOpen();
@@ -57,7 +60,7 @@ public class Reader implements NativeReaderCallback{
     
  
     public int getNumberEnrollStages(){
-        System.out.println("Here: " + mEnrollStages);
+        
         if (mEnrollStages == -1){
             checkForDispatcher();
             Message msg = new Message(Message.GET_ENROLL_STAGES, Message.MESSAGE_NORMAL_PRIORITY, true);
@@ -67,8 +70,20 @@ public class Reader implements NativeReaderCallback{
                 mEnrollStages = num.intValue();
             }
         }
-        System.out.println("Here");
         return mEnrollStages;
+    }
+    
+    public EnrollResult enrollFinger(){
+        this.startEnrollment();
+        synchronized(mLastEnroll){
+            mLastEnroll.clear();
+            while(mLastEnroll.isEmpty()){
+                try {
+                    mLastEnroll.wait();
+                } catch (InterruptedException ex) {}
+            }
+            return mLastEnroll.get(0);
+        }
     }
     
     private void checkForDispatcher(){
@@ -98,7 +113,6 @@ public class Reader implements NativeReaderCallback{
     
     @Override
     public void onCapture(EnrollResult enroll, Object userData) {
-        
         if (enroll.getCode() == EnrollResult.COMPLETE){
             Message msg = new Message(Message.STOP_ENROLLMENT, Message.MESSAGE_NORMAL_PRIORITY);
             MessageResult result = mDispatcher.sendMessage(msg);
@@ -111,7 +125,12 @@ public class Reader implements NativeReaderCallback{
                 listener.onCapture(this, enroll);
             }
         }
-        
+        if (enroll.getCode() != EnrollResult.CAPTURE_COMPLETE){
+            synchronized(mLastEnroll){
+                mLastEnroll.add(enroll);
+                mLastEnroll.notify();
+            }
+        }
     }
 
     @Override
@@ -144,13 +163,6 @@ public class Reader implements NativeReaderCallback{
     @Override
     public void onError(Object userData){
         Message msg = (Message) userData;
-        System.out.println("Error al procesar este mensaje:" + msg.mCode);
-        if (msg.mCode == Message.GET_DRIVER_NAME){
-            mDriverName = "Dispositivo ocupado";
-        }
-        else if (msg.mCode == Message.GET_ENROLL_STAGES){
-            mEnrollStages = 0;
-        }
         synchronized(mListeners){
             for(ReaderListener listener: mListeners){
                 listener.onError(this, msg.mCode);
@@ -158,6 +170,7 @@ public class Reader implements NativeReaderCallback{
         }
     }
     
+   
     /**
      * Inicia el proceso de captura de huellas en el dispositivo, puede ser llamado desde cualquier hilo
      */
@@ -169,7 +182,7 @@ public class Reader implements NativeReaderCallback{
         mDispatcher.sendMessage(new Message(Message.STOP_CAPTURE, 1));
     }
     public void startEnrollment(){
-        mDispatcher.sendMessage(new Message((Message.START_ENROLLMENT),1));
+        mDispatcher.sendMessage(new Message((Message.START_ENROLLMENT),Message.MESSAGE_NORMAL_PRIORITY));
     }
     public void stopEnrollment(){
         mDispatcher.sendMessage(new Message(Message.STOP_ENROLLMENT, 1));
@@ -180,23 +193,19 @@ public class Reader implements NativeReaderCallback{
         Message msg = new Message(Message.OPEN, Message.MESSAGE_NORMAL_PRIORITY, true);
         MessageResult result = mDispatcher.sendMessage(msg);
         if (result.code == MessageResult.FAIL){
-            throw new ReaderException("Otro proceso esta utilizando el disposito y no se puede tener acceso a este");
+            throw new ReaderException("Otro proceso esta utilizando el dispositivo y no se puede tener acceso a este");
         }
     }
     public void close(){
-        mDispatcher.sendMessage(new Message(Message.CLOSE, 0));
+        mDispatcher.sendMessage(new Message(Message.CLOSE, 0, true));
     }
     
-  
-    public synchronized  EnrollResult enrollFinger(){
-        return null;
-    }
-    
+   
     
     public Reader(){
         mDispatcher = new ReaderDispatcher(this, this);
         mListeners = new ArrayList<ReaderListener>();
-        System.out.println("Reader::init");
+        mLastEnroll = new ArrayList<EnrollResult>();
     }
     public void addListener(ReaderListener listener) {
         synchronized (mListeners) {

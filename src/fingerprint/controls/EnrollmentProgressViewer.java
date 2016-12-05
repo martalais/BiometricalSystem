@@ -80,7 +80,6 @@ public class EnrollmentProgressViewer extends Canvas  {
             }
             @Override
             public void onStartCapture(Reader reader) {
-                System.out.println("EPV:OnStartCapture()");
                 Platform.runLater(() -> {                    
                     setStatus(0);
                     setTotalProgress(reader.getNumberEnrollStages());

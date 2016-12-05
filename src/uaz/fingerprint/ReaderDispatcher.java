@@ -45,15 +45,17 @@ public class ReaderDispatcher implements Runnable{
     public MessageResult sendMessage(Message msg){
         boolean inserted = false;
         synchronized(mQueue){
-            if (!mQueue.contains(msg))
+            if (!mQueue.contains(msg)){
                 inserted =  mQueue.add(msg);
+                mQueue.notify();
+            }
         }        
         if (inserted && msg.mWaitable){
             synchronized(mWaitingResults){
                 MessageResult result = null;
                 while((result = mWaitingResults.remove(msg)) == null){
                     try {
-                        mWaitingResults.wait(100);
+                        mWaitingResults.wait();
                     } catch (InterruptedException ex) {
                         Logger.getLogger(ReaderDispatcher.class.getName()).log(Level.SEVERE, null, ex);
                     }
@@ -83,7 +85,7 @@ public class ReaderDispatcher implements Runnable{
         loop: while(true){
             Message msg = pickMessage();
             if (msg != null ){
-                System.out.println("Procesando Mensaje:" +msg.mCode + " \t" + Thread.currentThread().getName());
+                //System.out.println("Procesando Mensaje:" +msg.mCode + " \t" + Thread.currentThread().getName());
                 Object ret = null;
                 int code = MessageResult.IGNORED;
                 switch (msg.mCode) {
@@ -91,10 +93,12 @@ public class ReaderDispatcher implements Runnable{
                         if (!mIsCapturing && !mIsEnrolling && mIsOpen){
                             if (mReader.nativeStartCapture(mCallback, msg) < 0){
                                 mCallback.onError(msg);
+                                code = MessageResult.FAIL;
                             }
                             else{
                                 mIsCapturing = true;
                                 mCallback.onCaptureStart(msg);
+                                code = MessageResult.SUCCESS;
                             }
                         }
                         break;
@@ -102,6 +106,10 @@ public class ReaderDispatcher implements Runnable{
                         if (mIsCapturing){
                             if (mReader.nativeStopCapture(mCallback, msg) < 0){
                                 mCallback.onError(msg);
+                                code = MessageResult.FAIL;
+                            }
+                            else{
+                                code = MessageResult.SUCCESS;
                             }
                             mIsCapturing = false;
                         }
@@ -110,10 +118,12 @@ public class ReaderDispatcher implements Runnable{
                         if (!mIsCapturing && !mIsEnrolling && mIsOpen){
                             if (mReader.nativeStartEnrollment(mCallback, msg) < 0){
                                 mCallback.onError(msg);
+                                code = MessageResult.FAIL;
                             }
                             else{
                                 mCallback.onCaptureStart(msg);
                                 mIsEnrolling = true;
+                                code = MessageResult.SUCCESS;
                             }                            
                         }
                         break;
@@ -121,6 +131,10 @@ public class ReaderDispatcher implements Runnable{
                         if (mIsEnrolling){
                             if (mReader.nativeStopEnrollment(mCallback, mReader) < 0){
                                 mCallback.onError(msg);
+                                code = MessageResult.FAIL;
+                            }
+                            else{
+                                code = MessageResult.SUCCESS;
                             }
                         }                        
                         mIsEnrolling = false;
@@ -129,10 +143,12 @@ public class ReaderDispatcher implements Runnable{
                         if (!mIsOpen){
                             if (mReader.nativeOpen()  < 0){
                                 mCallback.onError(msg);
+                                code = MessageResult.FAIL;
                             }
                             else{
                                 mIsOpen = true;
                                 mCallback.onOpen(msg);
+                                code = MessageResult.SUCCESS;
                             }                            
                         }                        
                         break;
@@ -140,25 +156,31 @@ public class ReaderDispatcher implements Runnable{
                         if (mIsOpen){ 
                             if (mReader.nativeClose() < 0){
                                 mCallback.onError(msg);
+                                code = MessageResult.FAIL;
                             }else{
                                 mIsOpen = false;
-                                mCallback.onClose(msg);       
+                                mCallback.onClose(msg);
+                                code = MessageResult.SUCCESS;
                             }
                         }
                         break;
                     case Message.CLOSE_DISPATCHER:
                         if (mIsOpen){
                             mReader.nativeClose();
+                            code = MessageResult.SUCCESS;
                         }
                         break loop;
                     case Message.GET_ENROLL_STAGES:
                         if (mIsOpen){
                             int result = mReader.nativeGetNumberEnrollStages();
                             mCallback.onGetEnrollStages(result, msg);
+                            code = MessageResult.SUCCESS;
+                            ret = new Integer(result);
                         }
                         else{
                             //Necesitamos abrir el dispositvo primero para poder obtener informacion de el
                             mCallback.onError(msg);
+                            code = MessageResult.FAIL;
                         }
                         break;   
                     case Message.GET_DRIVER_NAME:
@@ -187,9 +209,10 @@ public class ReaderDispatcher implements Runnable{
                     }
                 }
             }
-            if (mIsOpen && (mIsCapturing || mIsEnrolling)){
+            //Si estamos en proceso de captura, revisamos que la huella este lista
+            if (mIsOpen){
                 mReader.nativeHandleEvents(0);
-            }
+            }            
         }
         
        

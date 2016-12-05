@@ -90,7 +90,7 @@
     -fx-background-radius: 3,2;
     -fx-text-fill: #5172ab;
     -fx-font-weight: bold;
-    -fx-effect: innershadow(two-pass-box, #000000, 2, 0.0, 0, 0);
+    -fx-effect: innershadow(two-pass-box, #000000, 5, 0.4, 0, 0);
 }
 .buttonNormal LabeledText {
     -fx-effect: dropshadow( one-pass-box , rgba(0,0,0,0.8) , 1, 0.0 , 1 , 1);
@@ -124,7 +124,7 @@
     -fx-background-radius: 3,2;
     -fx-text-fill: #e6a5a5;
     -fx-font-weight: bold;
-    -fx-effect: innershadow(two-pass-box, #000000, 2, 0.0, 0, 0);
+    -fx-effect: innershadow(two-pass-box, #000000, 5, 0.4, 0, 0);
 }
 .buttonCancel LabeledText {
     -fx-effect: dropshadow( two-pass-box , rgba(0,0,0,0.8) , 1, 0.0 , 1 , 1);
@@ -132,9 +132,9 @@
 
 .buttonOk {
     -fx-background-color: 
-        linear-gradient(to bottom, rgba(0,110,46,1) 0%,rgba(0,65,46,1) 100%),
-        linear-gradient(to bottom, rgba(201,222,170,1) 0%,rgba(60,226,144,1) 100%),
-        linear-gradient(rgba(162,255,147,1), rgba(89,127,53,1));
+        #0A5429,
+        linear-gradient(#7BF7AF, #18A050),
+        linear-gradient(to bottom, rgba(18,168,78,1) 0%,rgba(0,110,46,1) 100%); 
     -fx-background-insets: 0,1,2;
     -fx-background-radius: 3,2,2;
     -fx-text-fill: white;
@@ -142,9 +142,9 @@
 }
 .buttonOk:hover{
     -fx-background-color: 
-        linear-gradient(to bottom, rgba(0,110,46,1) 0%,rgba(0,65,46,1) 100%),
-        linear-gradient(to bottom, rgba(201,222,170,1) 0%,rgba(60,226,144,1) 100%),
-        linear-gradient(rgba(180,255,167,1), rgba(110,150,75,1));
+         #0A5429,
+        linear-gradient(#7BF7AF, #18A050),
+        linear-gradient(to bottom, rgba(48,198,78,1) 0%,rgba(30,140,76,1) 100%);
     -fx-background-insets: 0,1,2;
     -fx-background-radius: 3,2,2;
     -fx-text-fill: white;
@@ -152,14 +152,15 @@
 }
 .buttonOk:pressed{
     -fx-background-color: 
-        linear-gradient(to bottom, rgba(0,110,46,1) 0%,rgba(0,65,46,1) 100%),
+        #0A5429,
         linear-gradient(to bottom, rgba(0,85,56,1) 0%,rgba(32,96,46,1) 100%);
     -fx-background-insets: 0,1;
     -fx-background-radius: 3,2;
     -fx-text-fill: #99ff99;
     -fx-font-weight: bold;
-    -fx-effect: innershadow(two-pass-box, #000000, 2, 0.0, 0, 0);
+    -fx-effect: innershadow(two-pass-box, #000000, 5, 0.4, 0, 0);
 }
+
 .buttonOk LabeledText {
     -fx-effect: dropshadow( two-pass-box , rgba(0,0,0,0.8) , 1, 0.0 , 1 , 1);
 }    

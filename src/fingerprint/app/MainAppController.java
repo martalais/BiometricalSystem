@@ -162,8 +162,12 @@ public class MainAppController implements Initializable {
         tblPermisos.setEditable(true);
         ObservableList<Permiso> mData = FXCollections.observableArrayList();
         
-        mData.add(new Permiso(0, "Codigo cero"));
-        mData.add(new Permiso(1, "Codigo uno"));
+        mData.add(new Permiso(0, "Acceso a laboratorio de redes"));
+        mData.add(new Permiso(1, "Acceso a servidores"));
+        mData.add(new Permiso(2, "Acceso a laboratorios de computación"));
+        mData.add(new Permiso(3, "Acceso a aulas"));                 
+        mData.add(new Permiso(4, "Acceso a sala de maestros"));
+                
         TableColumn colEnabler = new TableColumn("Habilitar");
         TableColumn colDescription = new TableColumn("Descripción");
         

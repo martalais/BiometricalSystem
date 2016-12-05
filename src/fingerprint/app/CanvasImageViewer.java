@@ -147,7 +147,6 @@ public class CanvasImageViewer extends Canvas {
             imageWidth = imageHeight / imageRatio;
         }
         gc.clearRect(0, 0, width, height);  
-        System.out.println("size: " + width + " " + height);
         gc.setFill(mBackground);
         gc.fillRect(0, 0, width, height);
         gc.drawImage(img, (width - imageWidth) / 2.0, (height-imageHeight) /2.0, imageWidth, imageHeight);

@@ -55,6 +55,7 @@ import javax.imageio.ImageIO;
 import uaz.fingerprint.EnrollResult;
 
 import uaz.fingerprint.Reader;
+import uaz.fingerprint.ReaderException;
 import uaz.fingerprint.ReaderListener;
 
 /**
@@ -74,7 +75,7 @@ public class EnrollmentDialog extends Stage implements Initializable {
     private EnrollmentProgressViewer mEnrollmentViewer;
     private CanvasImageViewer mImageViewer;
     private EnrollResult mResult;
-
+    private List<Reader> mDevices;
     public EnrollmentDialog(){
         FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource("EnrollmentDialog.fxml"));
         fxmlLoader.setController(this);
@@ -87,13 +88,19 @@ public class EnrollmentDialog extends Stage implements Initializable {
     }
     
     public EnrollResult showDialog(Window parent){
-        List<Reader> list = Reader.listDevices();
-        list.forEach((t) -> {
-            t.open();
-            t.getDriverName();
-        });
-        if (list != null){            
-            ObservableList<Reader> devices = FXCollections.observableArrayList(list);
+        mDevices = Reader.listDevices();
+        for (int i = 0; i < mDevices.size();){
+            try{                
+                mDevices.get(i).open();
+                mDevices.get(i).getDriverName();
+                i++;
+            }
+            catch(ReaderException e){
+                mDevices.remove(i);
+            }
+        }
+        if (mDevices != null){            
+            ObservableList<Reader> devices = FXCollections.observableArrayList(mDevices);
             cmbDevices.setItems(devices);
             cmbDevices.getSelectionModel().selectedItemProperty().addListener((ObservableValue observable, Object oldValue, Object newValue) -> {
                 if (newValue != null){
@@ -134,6 +141,7 @@ public class EnrollmentDialog extends Stage implements Initializable {
     private void initReader(Reader reader){
         //Desabilitamos la seleccion de dispositvos mientras estemos inicializando un reader        
         cmbDevices.setDisable(true);
+        btnAccept.setDisable(true);
         //Si hay un visor de enrollamiento lo cerramos y quitamos del gestor
         if (mEnrollmentViewer != null){            
             mEnrollmentViewer.getReader().stopEnrollment();
@@ -150,7 +158,6 @@ public class EnrollmentDialog extends Stage implements Initializable {
         reader.addListener(new ReaderListener(){
             @Override
             public void onStartCapture(Reader reader) {
-                System.out.println("Reader start()");
                 Platform.runLater(() -> {
                     cmbDevices.setDisable(false); //On error tambien agregar
                     VBox.setVgrow(mEnrollmentViewer, Priority.ALWAYS);
@@ -169,6 +176,7 @@ public class EnrollmentDialog extends Stage implements Initializable {
                     mResult = result;
                     Platform.runLater(() -> {
                         setStatus("El escaneo fue exitoso, has terminado de registrar tu huella", 0); //Agregamos el visor de los enrolls
+                        btnAccept.setDisable(false);
                         
                     });
                 }
@@ -217,6 +225,13 @@ public class EnrollmentDialog extends Stage implements Initializable {
         
         reader.startEnrollment();
     }
+    private void closeReaders(){
+        if (mDevices != null){
+            for(Reader reader : mDevices){
+                reader.close();
+            }
+        }
+    }
     /**
      * Initializes the controller class.
      */
@@ -236,24 +251,16 @@ public class EnrollmentDialog extends Stage implements Initializable {
         boxImageContainer.getChildren().add(mImageViewer);
         setStatus("Seleccione un dispositivo de la lista", 3);
         this.setOnCloseRequest((event) -> {
-            if (mEnrollmentViewer != null)
-                mEnrollmentViewer.getReader().close();
+            closeReaders();
         });
-        btnCancel.setOnAction((event) -> {           
-            if (mEnrollmentViewer != null)
-                mEnrollmentViewer.getReader().close();
-             mResult = null;
-             close();
-             System.out.println("Terminando");
+        btnCancel.setOnAction((event) -> {  
+            closeReaders();
+            mResult = null;
+            close();
         });
         btnAccept.setOnAction((event) -> {
-            
-            if (mResult != null){
-                if (mEnrollmentViewer != null)
-                    mEnrollmentViewer.getReader().close();
-                close();
-            }
-                
+            closeReaders();
+            close();    
         });
     }    
     
