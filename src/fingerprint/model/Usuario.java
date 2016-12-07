@@ -24,6 +24,7 @@
 package fingerprint.model;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.TreeSet;
 import uaz.fingerprint.EnrollResult;
 
@@ -103,7 +104,17 @@ public class Usuario {
     public TreeSet<Permiso> getPermisos(){
         return permisos;
     }
-   
+    public String toString(){
+        return "{nombre: " + nombre + ", apellidos: " + apellidos + "}";
+    }
+    
+    public Date getNacimiento(){
+        return nacimiento;
+    }
+    public void setNacimiento(Date date){
+        nacimiento = date;
+    }
+    private Date nacimiento;
     private String nombre;
     private String apellidos;
     private String email;

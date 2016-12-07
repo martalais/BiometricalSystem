@@ -34,7 +34,7 @@ import javafx.beans.property.StringProperty;
  *
  * @author xmbeat
  */
-public class Permiso {
+public class Permiso implements Comparable<Permiso>{
     private final StringProperty mDescription;
     private final IntegerProperty mCode;
     private final BooleanProperty mEnabled;
@@ -72,5 +72,13 @@ public class Permiso {
     }
     public boolean getEnabled(){
         return mEnabled.get();
+    }
+
+    @Override
+    public int compareTo(Permiso o) {
+        if (o != null){
+            return o.getCode() - this.getCode();
+        }
+        return -1;
     }
 }

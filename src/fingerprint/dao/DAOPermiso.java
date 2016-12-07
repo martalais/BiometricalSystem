@@ -1,3 +1,14 @@
+package fingerprint.dao;
+
+import fingerprint.model.Permiso;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /*
  * The MIT License
  *
@@ -21,28 +32,31 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package fingerprint.dao;
-
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  *
  * @author xmbeat
  */
-public class DBUtil {
-    public static Connection getConnection() throws SQLException, ClassNotFoundException{
-        String driver = "com.mysql.jdbc.Driver";
-        String user = "root";
-        String password = "ingsoftware2013";
-        String host = "localhost";
-        String database = "Escuela";
-        Class.forName(driver);
-        Connection con = DriverManager.getConnection("jdbc:mysql://" + host + "/" + database , user, password);
-        con.setAutoCommit(false);
-        return con;
-    }    
+public class DAOPermiso {
+    private Connection mConn;
+    public DAOPermiso() throws SQLException, ClassNotFoundException{
+        mConn = DBUtil.getConnection();
+    }
+    public ArrayList<Permiso> getPermisos(){
+        ArrayList<Permiso> result = new ArrayList<>();
+        try {
+            Statement stmt = mConn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT * FROM Permiso");
+            while(rs.next()){
+                Permiso permiso = new Permiso(rs.getInt(1), rs.getString(2));
+                result.add(permiso);
+            }
+            rs.close();
+            stmt.close();
+        } catch (SQLException ex) {
+            Logger.getLogger(DAOPermiso.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return result;
+    }
 }

@@ -42,6 +42,8 @@ public class ReaderDispatcher implements Runnable{
     private boolean mIsEnrolling;
     private boolean mIsOpen;
     
+    //Si el mensaje es waitable hay que determinar en que hilo se ejectua para evitar un bloqueo
+    //en caso de se ejecute en en este hilo
     public MessageResult sendMessage(Message msg){
         boolean inserted = false;
         synchronized(mQueue){
@@ -85,7 +87,7 @@ public class ReaderDispatcher implements Runnable{
         loop: while(true){
             Message msg = pickMessage();
             if (msg != null ){
-                //System.out.println("Procesando Mensaje:" +msg.mCode + " \t" + Thread.currentThread().getName());
+                System.out.println("Procesando Mensaje:" +msg.mCode + " \t" + Thread.currentThread().getName());
                 Object ret = null;
                 int code = MessageResult.IGNORED;
                 switch (msg.mCode) {
@@ -109,6 +111,7 @@ public class ReaderDispatcher implements Runnable{
                                 code = MessageResult.FAIL;
                             }
                             else{
+                                
                                 code = MessageResult.SUCCESS;
                             }
                             mIsCapturing = false;
@@ -134,6 +137,7 @@ public class ReaderDispatcher implements Runnable{
                                 code = MessageResult.FAIL;
                             }
                             else{
+                                
                                 code = MessageResult.SUCCESS;
                             }
                         }                        

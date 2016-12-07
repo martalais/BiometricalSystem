@@ -11,53 +11,48 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<TabPane minHeight="550.0" minWidth="750.0" prefHeight="718.0" prefWidth="942.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fingerprint.app.MainAppController">
+<TabPane fx:id="tpnMain" minHeight="550.0" minWidth="750.0" prefHeight="718.0" prefWidth="942.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="fingerprint.app.MainAppController">
    <tabs>
-      <Tab closable="false" text="Identificador">
+      <Tab fx:id="tabIdentification" closable="false" text="Identificador">
          <content>
             <VBox>
                <children>
                   <HBox prefHeight="100.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
                      <children>
-                        <SplitPane dividerPositions="0.6662030598052852" prefHeight="160.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
+                        <SplitPane fx:id="spnUserInfo" dividerPositions="0.5925531914893617" prefHeight="160.0" prefWidth="200.0" HBox.hgrow="ALWAYS">
                            <items>
-                              <AnchorPane minHeight="0.0" minWidth="300.0" prefHeight="160.0" prefWidth="100.0" />
+                              <VBox fx:id="boxUserImage" prefHeight="200.0" prefWidth="100.0" />
                               <VBox prefHeight="200.0" prefWidth="100.0">
                                  <children>
                                     <Accordion VBox.vgrow="ALWAYS">
                                        <panes>
                                           <TitledPane text="Información general">
                                              <content>
-                                                <VBox prefHeight="200.0" prefWidth="100.0">
+                                                <VBox fx:id="boxUserInfo" prefHeight="200.0" prefWidth="100.0">
                                                    <children>
                                                       <Label text="Nombre:">
                                                          <VBox.margin>
                                                             <Insets top="10.0" />
                                                          </VBox.margin>
                                                       </Label>
-                                                      <TextField editable="false" />
+                                                      <TextField fx:id="txtNombre" editable="false" />
                                                       <Label text="Apellidos:">
                                                          <VBox.margin>
                                                             <Insets top="10.0" />
                                                          </VBox.margin>
                                                       </Label>
-                                                      <TextField editable="false" />
+                                                      <TextField fx:id="txtApellidos" editable="false" />
                                                       <Label text="Matrícula:">
                                                          <VBox.margin>
                                                             <Insets top="10.0" />
                                                          </VBox.margin>
                                                       </Label>
-                                                      <TextField editable="false" />
+                                                      <TextField fx:id="txtMatricula" editable="false" />
                                                       <Separator prefWidth="200.0">
                                                          <VBox.margin>
                                                             <Insets top="10.0" />
                                                          </VBox.margin>
                                                       </Separator>
-                                                      <ScrollPane prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
-                                                         <VBox.margin>
-                                                            <Insets top="10.0" />
-                                                         </VBox.margin>
-                                                      </ScrollPane>
                                                    </children>
                                                 </VBox>
                                              </content>
@@ -70,25 +65,31 @@
                         </SplitPane>
                      </children>
                   </HBox>
-                  <ToolBar nodeOrientation="LEFT_TO_RIGHT" prefHeight="40.0" prefWidth="200.0">
-                     <items>
-                        <Button mnemonicParsing="false" prefHeight="33.0" prefWidth="107.0" text="Cancelar" />
+                  <HBox prefHeight="30.0" prefWidth="922.0" spacing="8.0">
+                     <children>
+                        <ComboBox fx:id="cmbDevices" maxHeight="1.7976931348623157E308" maxWidth="-Infinity" prefHeight="33.0" prefWidth="255.0" />
+                        <Button fx:id="btnDevices" maxHeight="1.7976931348623157E308" mnemonicParsing="false" prefHeight="26.0" prefWidth="27.0" />
                         <Separator orientation="VERTICAL" prefHeight="0.0" prefWidth="17.0" />
-                        <ProgressIndicator prefHeight="28.0" prefWidth="56.0" />
-                        <Label text="Buscando huella digital..." />
-                     </items>
-                  </ToolBar>
+                        <Pane maxWidth="1.7976931348623157E308" prefHeight="200.0" prefWidth="200.0" HBox.hgrow="ALWAYS" />
+                        <ProgressIndicator fx:id="pinProgress" prefHeight="28.0" prefWidth="56.0" visible="false" />
+                        <Label fx:id="lblStatus" maxHeight="1.7976931348623157E308" />
+                        <Button fx:id="btnAction" maxHeight="1.7976931348623157E308" mnemonicParsing="false" prefHeight="100.0" prefWidth="114.0" text="Cancelar" visible="false" />
+                     </children>
+                     <VBox.margin>
+                        <Insets bottom="8.0" left="8.0" right="8.0" top="8.0" />
+                     </VBox.margin>
+                  </HBox>
                </children>
             </VBox>
          </content>
       </Tab>
-      <Tab closable="false" text="Administración">
+      <Tab fx:id="tabAdmin" closable="false" text="Administración">
          <content>
             <HBox>
                <children>
                   <VBox prefHeight="492.0" prefWidth="784.0" HBox.hgrow="ALWAYS">
                      <children>
-                        <TabPane prefHeight="615.0" prefWidth="847.0" side="LEFT" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+                        <TabPane fx:id="tpnAdmin" prefHeight="615.0" prefWidth="847.0" side="LEFT" tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
                            <tabs>
                               <Tab text="Registro">
                                  <content>
@@ -108,15 +109,15 @@
                                                 <VBox fx:id="boxUserDataContainer" prefHeight="464.0" prefWidth="306.0">
                                                    <children>
                                                       <Label alignment="BOTTOM_LEFT" prefHeight="20.0" text="Nombre:" />
-                                                      <TextField />
+                                                      <TextField fx:id="txtRegistroNombre" />
                                                       <Label alignment="BOTTOM_LEFT" prefHeight="20.0" text="Apellidos:" />
-                                                      <TextField />
+                                                      <TextField fx:id="txtRegistroApellidos" />
                                                       <Label alignment="BOTTOM_LEFT" prefHeight="20.0" text="Correo electrónico:" />
-                                                      <TextField />
+                                                      <TextField fx:id="txtRegistroEmail" />
                                                       <Label alignment="BOTTOM_LEFT" prefHeight="20.0" text="Matricula:" />
-                                                      <TextField />
+                                                      <TextField fx:id="txtRegistroMatricula" />
                                                       <Label alignment="BOTTOM_LEFT" prefHeight="20.0" text="Fecha de nacimiento:" />
-                                                      <DatePicker maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="342.0" />
+                                                      <DatePicker fx:id="dprRegistroNacimiento" maxWidth="1.7976931348623157E308" prefHeight="25.0" prefWidth="342.0" />
                                                    </children>
                                                 </VBox>
                                                 <Separator orientation="VERTICAL" prefHeight="200.0" />
@@ -166,9 +167,17 @@
                                              </padding>
                                           </HBox>
                                           <Separator prefWidth="200.0" />
-                                          <HBox alignment="TOP_RIGHT" prefHeight="12.0" prefWidth="873.0" spacing="10.0">
+                                          <HBox alignment="TOP_RIGHT" prefHeight="12.0" prefWidth="873.0">
                                              <children>
-                                                <Button mnemonicParsing="false" prefWidth="126.0" text="Guardar">
+                                                <Label fx:id="lblRegistroStatus" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" style="-fx-effect: dropshadow( two-pass-box , rgba(0,0,0,0.8) , 1, 0.0 , 1 , 1); -fx-font-weight: bold; -fx-background-color: linear-gradient(to bottom, rgba(96,108,136,1) 0%,rgba(63,76,107,1) 100%);" text="Ingrese los datos necesarios para el registro" textFill="WHITE" HBox.hgrow="ALWAYS">
+                                                   <HBox.margin>
+                                                      <Insets />
+                                                   </HBox.margin>
+                                                   <padding>
+                                                      <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                                                   </padding>
+                                                </Label>
+                                                <Button fx:id="btnSave" mnemonicParsing="false" prefWidth="126.0" text="Guardar">
                                                    <graphic>
                                                       <ImageView fitHeight="22.0" fitWidth="22.0" pickOnBounds="true" preserveRatio="true">
                                                          <image>
@@ -176,11 +185,11 @@
                                                          </image>
                                                       </ImageView>
                                                    </graphic>
+                                                   <HBox.margin>
+                                                      <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                                                   </HBox.margin>
                                                 </Button>
                                              </children>
-                                             <padding>
-                                                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-                                             </padding>
                                           </HBox>
                                        </children>
                                     </VBox>
@@ -190,7 +199,7 @@
                         </TabPane>
                         <ToolBar nodeOrientation="RIGHT_TO_LEFT" prefWidth="820.0" VBox.vgrow="NEVER">
                            <items>
-                              <Button fx:id="btnRegister" mnemonicParsing="false" prefHeight="32.0" prefWidth="108.0" text="Registrar" />
+                              <Button mnemonicParsing="false" prefHeight="32.0" prefWidth="128.0" text="Salir" />
                            </items>
                         </ToolBar>
                      </children>

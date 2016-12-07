@@ -162,7 +162,7 @@ public class EnrollmentDialog extends Stage implements Initializable {
                     cmbDevices.setDisable(false); //On error tambien agregar
                     VBox.setVgrow(mEnrollmentViewer, Priority.ALWAYS);
                     VBox.setMargin(mEnrollmentViewer, new Insets(20));
-                    //Qutamos el progress indicator y ponemos el enrollmentviewer
+                    //Quitamos el progress indicator y ponemos el enrollmentviewer
                     boxProgressContainer.getChildren().remove(2);
                     boxProgressContainer.getChildren().add(2, mEnrollmentViewer);
                     setStatus("El scaner esta listo para procesar su huella", 3);

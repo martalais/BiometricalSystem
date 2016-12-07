@@ -32,6 +32,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.TreeSet;
 import java.util.logging.Level;
@@ -54,8 +55,8 @@ public class DAOUsuario {
     public int add(Usuario usuario){
         try{
 
-            String query = "INSERT INTO Usuario (nombre, apellidos, email, image";
-            String values = ") VALUES(?, ?, ?, ?";
+            String query = "INSERT INTO Usuario (nombre, apellidos, email, nacimiento, image";
+            String values = ") VALUES(?, ?, ?, ?, ?";
             ArrayList<EnrollResult> fingers = usuario.getFingerprints();
             
             for (int i = 0; i < fingers.size(); i++){
@@ -63,38 +64,54 @@ public class DAOUsuario {
                 values += ", ?";
             }
             query = query + values + ")";
+            System.out.println(query);
             PreparedStatement stmt = mConn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
             Blob blob = usuario.getImage() != null? new SerialBlob(usuario.getImage()):null;
 
             stmt.setString(1, usuario.getNombre());
             stmt.setString(2, usuario.getApellidos());
             stmt.setString(3, usuario.getEmail());
-            stmt.setBlob(4, blob);
-            int index = 5;
+            if (usuario.getNacimiento() != null){
+                SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                stmt.setString(4, formatter.format(usuario.getNacimiento()));
+            }
+            else{
+                stmt.setNull(4, java.sql.Types.VARCHAR);
+            }
+            
+            if (blob!= null)
+                stmt.setBlob(5, blob);
+            else
+                stmt.setNull(5,java.sql.Types.BLOB);
+            int index = 6;
             for (int i = 0; i < fingers.size(); i++){
                 byte[] bytes = fingers.get(i).getData();
                 blob = new SerialBlob(bytes);
                 stmt.setBlob(index++, blob);
                 
             }
-            stmt.executeUpdate();
-            ResultSet rs = stmt.getGeneratedKeys();
-            rs.next();
-            int id = rs.getInt(1);
-            stmt.close();
-            //Agregar los permisos
-            TreeSet<Permiso> permisos = usuario.getPermisos();
-            query = "INSERT INTO PermisoUsuario (permiso_id, usuario_id) values (?, ?)";
-            for (Permiso permiso: permisos){
-                stmt = mConn.prepareStatement(query);
-                stmt.setInt(permiso.getCode(), id);
+            if (stmt.executeUpdate() > 0){
+                ResultSet rs = stmt.getGeneratedKeys();
+                rs.next();
+                int id = rs.getInt(1);
                 stmt.close();
+                //Agregar los permisos
+                TreeSet<Permiso> permisos = usuario.getPermisos();
+                query = "INSERT INTO PermisoUsuario (permiso_id, usuario_id) values (?, ?)";
+                for (Permiso permiso: permisos){
+                    stmt = mConn.prepareStatement(query);
+                    stmt.setInt(1, permiso.getCode());
+                    stmt.setInt(2, id);
+                    stmt.executeUpdate();
+                    stmt.close();
+                }
+                mConn.commit();
+                return id;
             }
-            mConn.commit();
-            return id;
+            
         }
         catch(SQLException exc){
-            
+            exc.printStackTrace();
         }
         return -1;
     }
@@ -127,6 +144,8 @@ public class DAOUsuario {
                 usuario.setNombre(rs.getString("nombre"));
                 usuario.setApellidos(rs.getString("apellidos"));
                 usuario.setEmail(rs.getString("email"));
+                usuario.setImage(rs.getBytes("image"));
+                usuario.setNacimiento(rs.getDate("nacimiento"));
                 usuario.setImage(rs.getBytes("image"));
                 for (int i = 1; i <= 10; i++){
                     String column = "fingerprint" + i;

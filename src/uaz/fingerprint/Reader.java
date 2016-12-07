@@ -197,7 +197,11 @@ public class Reader implements NativeReaderCallback{
         }
     }
     public void close(){
-        mDispatcher.sendMessage(new Message(Message.CLOSE, 0, true));
+        if (mThread != null){
+            mDispatcher.sendMessage(new Message(Message.CLOSE, 0, true));
+            mThread = null;
+            mDispatcher.sendMessage(new Message(Message.CLOSE_DISPATCHER, 0, false));
+        }
     }
     
    

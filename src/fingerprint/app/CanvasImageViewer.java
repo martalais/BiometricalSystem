@@ -30,6 +30,7 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
+import javax.imageio.ImageIO;
 
 /**
  *
@@ -92,6 +93,20 @@ public class CanvasImageViewer extends Canvas {
         if (update)
             updateDraw();
     }
+    public void setImage(Image img, boolean update){
+        mImage = img;
+        if (update)
+            updateDraw();
+    }
+    public BufferedImage getBufferedImage(){
+        if (mImage != null)
+            return SwingFXUtils.fromFXImage(mImage, null);
+        return null;
+    }
+    public Image getImage(){
+       
+       return mImage;
+    }
     
     public void setImage(BufferedImage img){
         if (img != null){
@@ -101,7 +116,9 @@ public class CanvasImageViewer extends Canvas {
             mImage = null;
         }
     }
-    
+    public void setDefaultImage(Image img){
+        mDefaultImage = img;
+    }
     public void setDefaultImage(BufferedImage img){
         if (img != null){
             mDefaultImage = SwingFXUtils.toFXImage(img, (WritableImage)mDefaultImage);
