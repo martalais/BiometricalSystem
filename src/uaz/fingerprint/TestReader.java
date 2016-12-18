@@ -3,73 +3,74 @@ import java.util.*;
 /** 
 * TODO 
 */
-public class TestReader implements ReaderListener, Runnable{
+public class TestReader implements ReaderListener{
     ArrayList<Reader> readers;
     static int flag = 0;
     static EnrollResult enrolledFinger;
+    static Reader reader;
     public static void main(String args[]) throws InterruptedException{
         TestReader test = new TestReader();
-        Thread t1 = new Thread(test);
-        Thread t2 = new Thread(test);
-        t1.start();
-        Thread.sleep(3000);
-        t2.start();
+        reader = Reader.getDefault();
+        reader.setDaemon(false);
+        reader.open();
+        System.out.println("Device: " + reader.getDriverName());
+        System.out.println("Stages: " + reader.getEnrollStages());
+        reader.startCapture();
+        reader.addListener(test);
+        
         System.out.println("Main thread finished");
     }
 
     @Override
-    public void onStartCapture(Reader reader) {
-        System.out.println("El dispositivo ha empezado a capturar huellas");
+    public void onCaptureStart(Reader reader) {
+        System.out.println("TestReader::onCaptureStart()");
     }
 
     @Override
-    public void onCapture(Reader reader, EnrollResult enroll) {
-        System.out.println("Test::onCapture(): " + enroll.getCode() + " " + enroll.getData());
+    public void onCapture(Reader readser, EnrollResult result) {
         
+        System.out.println("TestReader::onCapture()");
+        reader.stopCapture();
+        reader.startEnrollment();
     }
 
     @Override
-    public void onStopCapture(Reader reader) {
-        System.out.println("El dispositivo ha finalizado de capturar huellas");
-     
+    public void onCaptureStop(Reader reader) {
+        System.out.println("TestReader::onCaptureStop()");
+    }
+
+  
+
+    @Override
+    public void onEnrollStart(Reader reader) {
+        System.out.println("TestReader::onEnrollStart()");
     }
 
     @Override
-    public void onOpen(Reader reader) {
-        System.out.println("El dispositivo se ha abierto");
+    public void onEnrollStop(Reader reader) {
+        System.out.println("TestReader::onEnrollStop()");
+        reader.close();
     }
 
     @Override
-    public void onClose(Reader reader) {
-        System.out.println("El dispositivo se ha cerrado");
-    }
-    
-    @Override
-    public void onError(Reader reader, int code){
-        System.out.println("On error: " + code);
+    public void onEnroll(Reader reader, EnrollResult result) {
+        System.out.println("TestReader::onEnroll()");
     }
 
     @Override
-    public void run() {
-        if (readers != null){
-            for (Reader reader: readers){
-                reader.stopCapture();
-                reader.close();
-            }
-        }
-        readers = Reader.listDevices();
-        Reader reader = readers.get(0);
-        reader.setDaemon(false); 
-        reader.open();
-
-        String driverName = reader.getDriverName();
-        int stages = reader.getNumberEnrollStages();
-
-        System.out.println("Device: " + driverName);
-        System.out.println("Enroll stages: " + stages);
-
-        reader.addListener(this);
-        reader.startCapture();
+    public void onVerifyStart(Reader reader) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
+
+    @Override
+    public void onVerify(Reader reader, VerifyResult result) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void onVerifyStop(Reader reader) {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
         
 }

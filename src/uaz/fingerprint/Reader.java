@@ -1,308 +1,301 @@
+/*
+ * The MIT License
+ *
+ * Copyright 2016 xmbeat.
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+ * THE SOFTWARE.
+ */
 package uaz.fingerprint;
 
+import java.io.IOException;
 import java.util.ArrayList;
-import java.io.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import uaz.nativeutils.*;
+import java.util.List;
+import uaz.nativeutils.NativeUtils;
 
+/**
+ * 
+ * @author xmbeat
+ */
 public class Reader implements NativeReaderCallback{
-
-    public static int FP_VERIFY_NO_MATCH = 0;
-    public static int FP_VERIFY_MATCH = 1;
+    private final NativeReader mNativeReader;
+    private final NativeReaderManager mManager;
+    private final ArrayList<ReaderListener> mListeners;
     private String mDriverName;
-    //Contador de referencias para la lista resultante dispositivos detectados (Lista proveniente desde codigo nativo)
-    private DeviceLock mDeviceLock;
-    //Puntero C a un elemento de la lista de los dispositivos
-    private long mDevice;
-    //Puntero C que hace referencia al dispositivo cuando se abre y que habilitan las operaciones de este.
-    private long mDeviceHandle;
-    //Puntero C que hace referencia un AsynCaptureData para este objeto
-    private long mAsynCaptureData;    
-    //Variable que indicara si este dispositivo esta abierto para leer de el
-    private boolean mIsDaemon = true;
-    private final ReaderDispatcher mDispatcher;
-    private ArrayList<ReaderListener> mListeners;
-    private int mEnrollStages = -1;
-    private Thread mThread;
-    private final ArrayList<EnrollResult> mLastEnroll;
-    
-    
-    public native int nativeOpen();
-    public native int nativeClose();
-    public native String nativeGetDriverName();
-    public native EnrollResult nativeGetCapture();
-    public native int nativeGetNumberEnrollStages();
-    public native int nativeStartCapture(NativeReaderCallback callback, Object usarData);
-    public native int nativeStopCapture(NativeReaderCallback callback, Object userData);
-    public native int nativeStartEnrollment(NativeReaderCallback callback, Object userData);
-    public native int nativeStopEnrollment(NativeReaderCallback callback, Object userData);
-    public native int nativeHandleEvents(int timeout);
-    public native EnrollResult nativeEnrollFinger();
-    
-    public void setDaemon(boolean value){
-        mIsDaemon = value;
-    }
-    public String getDriverName(){
-        if (mDriverName == null){
-           checkForDispatcher();
-           Message  msg = new Message(Message.GET_DRIVER_NAME, Message.MESSAGE_NORMAL_PRIORITY, true);
-           MessageResult result = mDispatcher.sendMessage(msg);
-           if (result.code == MessageResult.FAIL){
-               throw new ReaderException("El dispositivo no ha sido abierto, no se puede obtener informacion de éste");
-           }
-           else{
-               mDriverName = (String) result.result;
-           }
-        }
-        return mDriverName;
-    }
-    
- 
-    public int getNumberEnrollStages(){
-        
-        if (mEnrollStages == -1){
-            checkForDispatcher();
-            Message msg = new Message(Message.GET_ENROLL_STAGES, Message.MESSAGE_NORMAL_PRIORITY, true);
-            MessageResult result = mDispatcher.sendMessage(msg);
-            if (result.code == MessageResult.SUCCESS){
-                Integer num = (Integer) result.result;
-                mEnrollStages = num.intValue();
-            }
-        }
-        return mEnrollStages;
-    }
-    
-    public EnrollResult enrollFinger(){
-        this.startEnrollment();
-        synchronized(mLastEnroll){
-            mLastEnroll.clear();
-            while(mLastEnroll.isEmpty()){
-                try {
-                    mLastEnroll.wait();
-                } catch (InterruptedException ex) {}
-            }
-            return mLastEnroll.get(0);
-        }
-    }
-    
-    private void checkForDispatcher(){
-        if (mThread == null){
-            mThread = new Thread(mDispatcher);
-            mThread.setDaemon(mIsDaemon);
-            mThread.start();
-        }
-    }
-    @Override
-    public void onGetDriverName(String name, Object userData){
-        mDriverName = name;
-    }
-    @Override
-    public void onGetEnrollStages(int enrollStages, Object userData) {
-        mEnrollStages = enrollStages;
-    }
-    
-    @Override
-    public void onCaptureStart(Object userData){
-        synchronized(mListeners){
-            for(ReaderListener listener: mListeners){
-                listener.onStartCapture(this);
-            }
-        }
-    }
-    
-    @Override
-    public void onCapture(EnrollResult enroll, Object userData) {
-        if (enroll.getCode() == EnrollResult.COMPLETE){
-            Message msg = new Message(Message.STOP_ENROLLMENT, Message.MESSAGE_NORMAL_PRIORITY);
-            MessageResult result = mDispatcher.sendMessage(msg);
-            if (result != null){
-                
-            }
-        }
-        synchronized(mListeners){
-            for(ReaderListener listener: mListeners){
-                listener.onCapture(this, enroll);
-            }
-        }
-        if (enroll.getCode() != EnrollResult.CAPTURE_COMPLETE){
-            synchronized(mLastEnroll){
-                mLastEnroll.add(enroll);
-                mLastEnroll.notify();
-            }
-        }
-    }
-
-    @Override
-    public void onCaptureStop(Object userData) {
-        synchronized(mListeners){
-            for (ReaderListener listener: mListeners){
-                listener.onStopCapture(this);
-            }
-        }
-    }
-    
-    @Override
-    public void onOpen(Object userData){
-        synchronized(mListeners){
-            for (ReaderListener listener: mListeners){
-                listener.onOpen(this);
-            }
-        }
-    }
-    
-    @Override
-    public void onClose(Object userData){
-        synchronized(mListeners){
-            for (ReaderListener listener: mListeners){
-                listener.onClose(this);
-            }
-        }
-    }
-    
-    @Override
-    public void onError(Object userData){
-        Message msg = (Message) userData;
-        synchronized(mListeners){
-            for(ReaderListener listener: mListeners){
-                listener.onError(this, msg.mCode);
-            }
-        }
-    }
-    
-   
-    /**
-     * Inicia el proceso de captura de huellas en el dispositivo, puede ser llamado desde cualquier hilo
-     */
-    public void startCapture(){
-        mDispatcher.sendMessage(new Message(Message.START_CAPTURE, 1));
-    }
-    
-    public void stopCapture(){
-        mDispatcher.sendMessage(new Message(Message.STOP_CAPTURE, 1));
-    }
-    public void startEnrollment(){
-        mDispatcher.sendMessage(new Message((Message.START_ENROLLMENT),Message.MESSAGE_NORMAL_PRIORITY));
-    }
-    public void stopEnrollment(){
-        mDispatcher.sendMessage(new Message(Message.STOP_ENROLLMENT, 1));
-    }
-    
-    public void open(){        
-        checkForDispatcher();
-        Message msg = new Message(Message.OPEN, Message.MESSAGE_NORMAL_PRIORITY, true);
-        MessageResult result = mDispatcher.sendMessage(msg);
-        if (result.code == MessageResult.FAIL){
-            throw new ReaderException("Otro proceso esta utilizando el dispositivo y no se puede tener acceso a este");
-        }
-    }
-    public void close(){
-        if (mThread != null){
-            mDispatcher.sendMessage(new Message(Message.CLOSE, 0, true));
-            mThread = null;
-            mDispatcher.sendMessage(new Message(Message.CLOSE_DISPATCHER, 0, false));
-        }
-    }
-    
-   
-    
-    public Reader(){
-        mDispatcher = new ReaderDispatcher(this, this);
-        mListeners = new ArrayList<ReaderListener>();
-        mLastEnroll = new ArrayList<EnrollResult>();
-    }
-    public void addListener(ReaderListener listener) {
-        synchronized (mListeners) {
-            mListeners.add(listener);
-        }
-    }
-   
-    
-    public void removeListener(ReaderListener listener) {
-        synchronized (mListeners) {
-            mListeners.add(listener);
-        }
-    }
-
-   
-
-    //fp_init
-    private static native void init();
-
-    //fp_exit && fp_dscv_dev_free
-    private static native void exit();
-    
-    //fp_discover_devs && fp_dscv_dev_free
-    public static native ArrayList<Reader> listDevices();
-
-    public String toString() {
-        if (mDriverName != null){
-            return mDriverName;
-        }
-        return "Dispositivo no disponible";
-    }
-
-    public static Reader getDefault() {
-        ArrayList<Reader> listDevices = listDevices();
-        if (listDevices.size() > 0) {
-            return listDevices.get(0);
-        } else {
-            return null;
-        }
-    }
-
-    protected void finalize() throws Throwable {
-        try {
-            synchronized (mDeviceLock) {
-                if (mDeviceLock.popReference() <= 0) {
-                    System.out.println("Liberando dispositivos reader");
-                    Reader.freeDiscoveredDevices(mDeviceLock.getListDevices());
-                }
-            }
-        } finally {
-            super.finalize();
-        }
-    }
-
-    public native static void freeDiscoveredDevices(long pointer);
-
-    /* asyn not implemented yet
-		//fp_dscv_dev_get_devtype
-		public native int getType();
-		//fp_dscv_dev_get_driver
-		public native Driver getDriver();
-		Gets the devtype for a discovered device. 
-		int 	fp_dscv_dev_supports_print_data (struct fp_dscv_dev *dev, struct fp_print_data *data)
-		 	Determines if a specific stored print appears to be compatible with a discovered device. 
-		int 	fp_dscv_dev_supports_dscv_print (struct fp_dscv_dev *dev, struct fp_dscv_print *data)
-		 	Determines if a specific discovered print appears to be compatible with a discovered device. 
-		struct fp_dscv_dev * 	fp_dscv_dev_for_print_data (struct fp_dscv_dev **devs, struct fp_print_data *data)
-		 	Searches a list of discovered devices for a device that appears to be compatible with a stored print. 
-		struct fp_dscv_dev * 	fp_dscv_dev_for_dscv_print (struct fp_dscv_dev **devs, struct fp_dscv_print *print)
-		 	Searches a list of discovered devices for a device that appears to be compatible with a discovered print. 
-
-     */
-    
-
-
-    public native VerifyResult verify(byte[] enrolledFinger);
-
-    public native VerifyResult identify(byte[][] enrolledFingers);
-
-    public native static VerifyResult verify(byte[] print, byte[] anotherprint);
-
+    private Integer mEnrollStages;
+  
     static {
-
         try {
             System.loadLibrary("fingerprint"); // used for tests. This library in classpath only
-            Reader.init();
+            NativeReader.init();
         } catch (UnsatisfiedLinkError e) {
             try {
-                NativeUtils.loadLibraryFromJar("/nativelibs/" + System.mapLibrary‌​Name("fingerprint"));
-                Reader.init();
+                NativeUtils.loadLibraryFromJar("/nativelibs/" + System.mapLibraryName("fingerprint"));
+                NativeReader.init();
             } catch (IOException e1) {
                 throw new RuntimeException(e1);
             }
         }
     }
+    
+    
+    /**
+     * Crea he inicializa este lector.
+     * @param reader dispositivo que se usara para realizar las operaciones
+     */
+    private Reader(NativeReader reader){
+        mNativeReader = reader;
+        mListeners = new ArrayList<>();
+        mManager = new NativeReaderManager(reader);
+        mManager.addListener(this);
+    }
+    
+    /**
+     * Obtiene el nombre del driver del dispositivo lector
+     * @return el nombre del driver del dispositivo si ha sido abierto con anterioridad
+     * @throws ReaderException si el dispositivo no se ha abierto.
+     */
+    public String getDriverName() throws ReaderException{
+        if (mDriverName == null){
+            throw ReaderException.DEVICE_NOT_OPENED;
+        }
+        return mDriverName;
+    }
+    
+    @Override
+    public String toString(){
+        return mDriverName;
+    }
+    
+    public int getEnrollStages(){
+        if (mEnrollStages == null)
+            throw ReaderException.DEVICE_NOT_OPENED;
+        return mEnrollStages.intValue();
+    }
+
+    
+    public void addListener(ReaderListener listener){
+        mListeners.add(listener);
+    }
+    
+    
+    public static Reader getDefault(){
+        List<NativeReader> readers = NativeReader.listDevices();
+        if (readers != null && readers.size() > 0){
+            Reader reader = new Reader(readers.get(0));
+            
+            return reader;
+        }
+        return null;
+    }
+    
+    /**
+     * Llama al método nativo que obtiene una lista de dispositivos lectores 
+     * de huellas dactilares 
+     * @return una lista con los dispositivos lectores disponibles o null si no 
+     * hay disponibles.
+     */
+    public static List<Reader> listDevices(){
+        List<NativeReader> readers = NativeReader.listDevices();
+        List<Reader> result = new ArrayList<>();
+        if (readers != null && readers.size() > 0){
+            for (int i = 0; i < readers.size(); i++){
+                Reader reader = new Reader(readers.get(i));
+                result.add(reader);
+            }
+            return result;
+        }
+        return result;
+    }
+    
+    public void setDaemon(boolean value){
+        mManager.setDaemon(value);
+    }
+    
+    /**
+     * Obtiene acceso al dispositivo para poder ejectuar acciones sobre éste.
+     * @throws ReaderException Si el dispositivo ya esta siendo ocupado en otro
+     * contexto o proceso.
+     */
+    public void open() throws ReaderException{
+        Message msg = new Message(Message.OPEN, Message.MESSAGE_NORMAL_PRIORITY, true);
+        MessageResult result = mManager.sendMessage(msg);
+        if (result != null && result.code == MessageResult.FAIL){
+            throw ReaderException.DEVICE_BUSSY;
+        }
+        if (mDriverName == null){
+            msg = new Message(Message.GET_DRIVER_NAME, Message.MESSAGE_NORMAL_PRIORITY, true);
+            result = mManager.sendMessage(msg);
+            if (result.code == MessageResult.FAIL){
+                throw ReaderException.DEVICE_NOT_OPENED;
+            }
+            else{
+                mDriverName = (String)result.result;
+            }
+        }
+        if (mEnrollStages == null){
+            msg = new Message(Message.GET_ENROLL_STAGES, Message.MESSAGE_NORMAL_PRIORITY, true);
+            result = mManager.sendMessage(msg);
+            if (result.code == MessageResult.FAIL)
+                throw ReaderException.DEVICE_NOT_OPENED;
+            else
+                mEnrollStages = (Integer) result.result;
+        }
+    }
+    /**
+     * Cierra el dispositivo si fue creado, liberando los recursos suficientes 
+     * para que pueda ser usado en otro contexto.
+     * @throws ReaderException
+     */
+    public void close () throws ReaderException{
+        Message msg = new Message(Message.CLOSE, Message.MESSAGE_NORMAL_PRIORITY, true);
+        MessageResult result = mManager.sendMessage(msg);
+        if (result != null && result.code == MessageResult.FAIL){
+            throw ReaderException.DEVICE_NOT_OPENED;
+        }
+    }
+    /**
+     * 
+     * @throws ReaderException 
+     */
+    public void startCapture() throws ReaderException{
+        Message msg = new Message(Message.START_CAPTURE, Message.MESSAGE_NORMAL_PRIORITY, true);
+        MessageResult result = mManager.sendMessage(msg);
+        if (result != null && result.code == MessageResult.FAIL){
+            throw ReaderException.DEVICE_NOT_OPENED;
+        }
+    }
+    public void startEnrollment() throws ReaderException{
+        Message msg = new Message(Message.START_ENROLL, Message.MESSAGE_NORMAL_PRIORITY, true);
+        MessageResult result = mManager.sendMessage(msg);
+        if (result != null && result.code == MessageResult.FAIL){
+            throw ReaderException.DEVICE_NOT_OPENED;
+        }
+    }
+    
+    /**
+     * 
+     * @throws ReaderException 
+     */
+    public void stopCapture() throws ReaderException{
+        Message msg = new Message(Message.STOP_CAPTURE, Message.MESSAGE_NORMAL_PRIORITY, true);
+        MessageResult result = mManager.sendMessage(msg);
+        if (result != null && result.code == MessageResult.FAIL){
+            throw ReaderException.DEVICE_NOT_OPENED;
+        }
+    }
+    public void stopEnrollment() throws ReaderException{
+        Message msg = new Message(Message.STOP_ENROLL, Message.MESSAGE_NORMAL_PRIORITY, true);
+        MessageResult result = mManager.sendMessage(msg);
+        if (result != null && result.code == MessageResult.FAIL){
+            throw ReaderException.DEVICE_NOT_OPENED;
+        } 
+    }
+    
+    public static VerifyResult verify(byte[] printData, byte[] anotherPrintData){
+        //No importa desde que hilo se ejecute, esta funcion no depende de ningun dispositivo
+        return NativeReader.verify(printData, anotherPrintData);
+    }
+    public void startVerify(byte[] printData){
+        Message msg = new Message(Message.START_VERIFY, Message.MESSAGE_NORMAL_PRIORITY, true);
+        msg.mAdditionalData = printData;
+        MessageResult result = mManager.sendMessage(msg);
+        if (result != null && result.code == MessageResult.FAIL)
+            throw ReaderException.DEVICE_NOT_OPENED;
+    }
+    public void stopVerify(){
+        Message msg = new Message(Message.STOP_VERIFY, Message.MESSAGE_NORMAL_PRIORITY, true);
+        MessageResult result = mManager.sendMessage(msg);
+        if (result != null && result.code == MessageResult.FAIL)
+            throw ReaderException.DEVICE_NOT_OPENED;
+    }
+    /**
+     * Ejecuta un nuevo escaneo en el dispositivo y lo compara con printData
+     * @param printData la huella que se comparará con la resultante del escaneo
+     * @return un objeto VerifyResult con los datos de la comparación
+     */
+    public VerifyResult verify(byte[] printData){
+        Message msg = new Message(Message.VERIFY, Message.MESSAGE_NORMAL_PRIORITY, true);
+        msg.mAdditionalData = printData;
+        MessageResult result = mManager.sendMessage(msg);
+        if (result != null){
+            if (result.code == MessageResult.SUCCESS){
+                return (VerifyResult)result.result;
+            }
+            else{
+                throw ReaderException.DEVICE_NOT_OPENED;
+            }
+        }
+        return null;
+    }
+    public VerifyResult identify(){
+        return null;
+    }
+    
+    @Override
+    public void onEnroll(EnrollResult enroll, Object userData) {
+        System.out.println("On Enroll");
+        for (ReaderListener listener: mListeners){
+            listener.onEnroll(this, enroll);
+        }
+    }
+
+    @Override
+    public void onEnrollStart(Object userData) {
+        System.out.println("On Enroll Start");
+        for (ReaderListener listener: mListeners){
+            listener.onEnrollStart(this);
+        }
+    }
+
+    @Override
+    public void onEnrollStop(Object userData) {
+        System.out.println("On Enroll stop");
+        for (ReaderListener listener: mListeners){
+            listener.onEnrollStop(this);
+        }
+    }
+
+    @Override
+    public void onCapture(EnrollResult result, Object userdata) {
+        System.out.println("FingerprintReader::onCapture");
+        for (ReaderListener listener: mListeners){
+            listener.onCapture(this, result);
+        }
+    }
+
+    @Override
+    public void onCaptureStart(Object userData) {
+        System.out.println("FingerprintReader::onCaptureStart");
+        for (ReaderListener listener: mListeners){
+            listener.onCaptureStart(this);
+        }
+    }
+
+    @Override
+    public void onCaptureStop(Object userData) {
+        System.out.println("FingerprintReader::onCaptureStop");
+        for (ReaderListener listener: mListeners){
+            listener.onCaptureStop(this);
+        }
+    }
+    
+    
+        
+    
 }

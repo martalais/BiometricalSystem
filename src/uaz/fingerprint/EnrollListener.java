@@ -21,59 +21,39 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package fingerprint.dao;
-
-import fingerprint.model.Permiso;
-import fingerprint.model.Usuario;
-import java.sql.SQLException;
-import uaz.fingerprint.EnrollResult;
-import uaz.fingerprint.Reader;
-import uaz.fingerprint.ReaderListener;
+package uaz.fingerprint;
 
 /**
  *
  * @author xmbeat
  */
-public class TestDAO implements ReaderListener {
-    static DAOUsuario dao;
-    public static void main(String args[]) throws SQLException, ClassNotFoundException{
-        dao = new DAOUsuario();
-        Reader reader = Reader.getDefault();
-        reader.setDaemon(false);
-        reader.open();
-        reader.startCapture();
-        reader.addListener(new TestDAO());
+public abstract class EnrollListener implements ReaderListener{
+    @Override
+    public void onVerify(Reader reader, VerifyResult result){
+        
+    }
+    
+    @Override 
+    public void onVerifyStart(Reader reader){
+        
+    }
+    @Override
+    public void onVerifyStop(Reader reader){
+        
     }
 
     @Override
-    public void onStartCapture(Reader reader) {
+    public void onCaptureStart(Reader reader) {
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
     public void onCapture(Reader reader, EnrollResult result) {
-        Usuario usuario = dao.findByFingerprint(result);
-        System.out.println(usuario);
-    }
-
-    @Override
-    public void onStopCapture(Reader reader) {
-        
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
     @Override
-    public void onOpen(Reader reader) {
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void onClose(Reader reader) {
-        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-    }
-
-    @Override
-    public void onError(Reader reader, int code) {
+    public void onCaptureStop(Reader reader) {
         //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 }

@@ -23,15 +23,36 @@
  */
 package uaz.fingerprint;
 
+import java.util.List;
+
 /**
  *
  * @author xmbeat
  */
-public interface  NativeReaderCallback  {
-    public void onEnroll(EnrollResult enroll, Object userData);
-    public void onEnrollStart(Object userData);
-    public void onEnrollStop(Object userData);
-    public void onCapture(EnrollResult result, Object userdata);
-    public void onCaptureStart(Object userData);
-    public void onCaptureStop(Object userData);
+public class NativeReader {
+    private long mReaderDataPointer;
+    
+    public static native List<NativeReader> listDevices();
+    public static native int init();
+    public static native void exit();
+    public native int open();
+    public native int close();
+    public native String getDriverName();
+    public native int getEnrollStages();
+    public native int startCapture(NativeReaderCallback callback, Object userData);
+    public native int stopCapture(NativeReaderCallback callback, Object userData);
+    public native int startEnrollment(NativeReaderCallback callback, Object userData);
+    public native int stopEnrollment(NativeReaderCallback callback, Object userData);
+    public native int handleEvents(int waitTime);
+    public native VerifyResult verify(byte[] data);
+    public native static VerifyResult verify(byte[] print, byte[] anotherprint);
+    
+    public native int freeResources();
+    
+    @Override
+    protected void finalize() throws Throwable {
+        //Liberamos los recursos que se usaron en codigo nativo
+        this.freeResources();            
+        super.finalize();
+    }
 }

@@ -41,6 +41,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -78,6 +79,7 @@ import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.util.Callback;
 import javax.imageio.ImageIO;
+import uaz.fingerprint.CaptureListener;
 import uaz.fingerprint.EnrollResult;
 import uaz.fingerprint.Reader;
 import uaz.fingerprint.ReaderException;
@@ -131,7 +133,7 @@ public class MainAppController implements Initializable {
     private Image mIconFingerprint;
     private FingerprintListener mController;
     private ArrayList<Permiso> mPermisos;
-    private ArrayList<Reader> mDevices;
+    private List<Reader> mDevices;
     private UserFinder mFinder = new UserFinder();
     private UserSaver mSaver = new UserSaver();
     private Reader mSelectedReader;
@@ -531,10 +533,10 @@ public class MainAppController implements Initializable {
         }
     }
     
-    private class FingerprintListener implements ReaderListener{
+    private class FingerprintListener extends CaptureListener{
 
         @Override
-        public void onStartCapture(Reader reader) {
+        public void onCaptureStart(Reader reader) {
             //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
 
@@ -555,25 +557,9 @@ public class MainAppController implements Initializable {
         }
 
         @Override
-        public void onStopCapture(Reader reader) {
+        public void onCaptureStop(Reader reader) {
             //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
         }
-
-        @Override
-        public void onOpen(Reader reader) {
-            //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public void onClose(Reader reader) {
-            //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-
-        @Override
-        public void onError(Reader reader, int code) {
-            //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-        }
-        
     }
     
 }

@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- * Copyright 2016 Juan Hebert Chablé Covarrubias.
+ * Copyright 2016 xmbeat.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -25,13 +25,35 @@ package uaz.fingerprint;
 
 /**
  *
- * @author Juan Hebert Chablé Covarrubias
+ * @author xmbeat
  */
-public class ReaderException extends RuntimeException{
-    public ReaderException(String message){
-        super(message);
+public abstract class CaptureListener implements ReaderListener{
+
+    @Override
+    public void onVerify(Reader reader, VerifyResult result){
+        
     }
-    public final static ReaderException DEVICE_NOT_OPENED = new ReaderException("El dispositivo no ha sido abierto");
-    public final static ReaderException DEVICE_BUSSY = new ReaderException("El dispositivo esta ocupado por otro proceso");
-    public final static ReaderException DEVICE_DEAD_LOCK = new ReaderException("Un mensaje de tipo \"waitable\" no puede ejecutarse dentro de un método listener del dispositivo");
+    
+    @Override 
+    public void onVerifyStart(Reader reader){
+        
+    }
+    @Override
+    public void onVerifyStop(Reader reader){
+        
+    }
+    @Override
+    public void onEnrollStart(Reader reader) {
+        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void onEnrollStop(Reader reader) {
+        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public void onEnroll(Reader reader, EnrollResult result) {
+        //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }    
 }

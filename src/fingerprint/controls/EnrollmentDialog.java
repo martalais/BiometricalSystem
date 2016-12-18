@@ -52,6 +52,7 @@ import javafx.stage.Modality;
 import javafx.stage.Stage;
 import javafx.stage.Window;
 import javax.imageio.ImageIO;
+import uaz.fingerprint.EnrollListener;
 import uaz.fingerprint.EnrollResult;
 
 import uaz.fingerprint.Reader;
@@ -98,17 +99,15 @@ public class EnrollmentDialog extends Stage implements Initializable {
             catch(ReaderException e){
                 mDevices.remove(i);
             }
-        }
-        if (mDevices != null){            
-            ObservableList<Reader> devices = FXCollections.observableArrayList(mDevices);
-            cmbDevices.setItems(devices);
-            cmbDevices.getSelectionModel().selectedItemProperty().addListener((ObservableValue observable, Object oldValue, Object newValue) -> {
-                if (newValue != null){
-                   Reader reader = (Reader) newValue;
-                   initReader(reader);
-                }
-            });
-        }
+        }         
+        ObservableList<Reader> devices = FXCollections.observableArrayList(mDevices);
+        cmbDevices.setItems(devices);
+        cmbDevices.getSelectionModel().selectedItemProperty().addListener((ObservableValue observable, Object oldValue, Object newValue) -> {
+            if (newValue != null){
+               Reader reader = (Reader) newValue;
+               initReader(reader);
+            }
+        });
         this.initOwner(parent);
         this.initModality(Modality.WINDOW_MODAL);
         this.showAndWait();
@@ -155,9 +154,9 @@ public class EnrollmentDialog extends Stage implements Initializable {
         setStatus("Accediendo al dispositivo, espere un momento", 3);
         //Creamos el control asociado al reader
         mEnrollmentViewer = new EnrollmentProgressViewer(reader);
-        reader.addListener(new ReaderListener(){
+        reader.addListener(new EnrollListener(){
             @Override
-            public void onStartCapture(Reader reader) {
+            public void onEnrollStart(Reader reader) {
                 Platform.runLater(() -> {
                     cmbDevices.setDisable(false); //On error tambien agregar
                     VBox.setVgrow(mEnrollmentViewer, Priority.ALWAYS);
@@ -170,33 +169,36 @@ public class EnrollmentDialog extends Stage implements Initializable {
             }
                     
             @Override
-            public void onCapture(Reader reader, EnrollResult result) {
-                if (result.getCode() == EnrollResult.COMPLETE){
-                    //Verificar que no se haya cancelado el dialogo para asignar
-                    mResult = result;
-                    Platform.runLater(() -> {
-                        setStatus("El escaneo fue exitoso, has terminado de registrar tu huella", 0); //Agregamos el visor de los enrolls
-                        btnAccept.setDisable(false);
-                        
-                    });
+            public void onEnroll(Reader reader, EnrollResult result) {
+                switch (result.getCode()) {
+                    case EnrollResult.COMPLETE:
+                        //Verificar que no se haya cancelado el dialogo para asignar
+                        mResult = result;
+                        Platform.runLater(() -> {
+                            setStatus("El escaneo fue exitoso, has terminado de registrar tu huella", 0); //Agregamos el visor de los enrolls
+                            btnAccept.setDisable(false);
+                            
+                        }); break;
+                    case EnrollResult.PASS:
+                        Platform.runLater(() -> {
+                            setStatus("El escaneo fue exitoso, coloca tu dedo en el lector otra vez", 0);
+                        }); break;
+                    case EnrollResult.FAIL:
+                        Platform.runLater(() -> {
+                            setStatus("El escaneo falló por completo, reinicie el proceso de escaneo por favor", 1);
+                        }); break;
+                    default:
+                        Platform.runLater(() -> {
+                            setStatus("El escaneo falló, intenta colocar bien tu dedo sobre el lector", 2);
+                        }); break;
                 }
-                else if (result.getCode() == EnrollResult.PASS){
-                    Platform.runLater(() -> {
-                        setStatus("El escaneo fue exitoso, coloca tu dedo en el lector otra vez", 0);
-                    });
-                }
-                else if (result.getCode() == EnrollResult.FAIL){
-                    Platform.runLater(() -> {
-                        setStatus("El escaneo falló por completo, reinicie el proceso de escaneo por favor", 1);
-                    });
-                }
-                else{
-                    Platform.runLater(() -> {
-                        setStatus("El escaneo falló, intenta colocar bien tu dedo sobre el lector", 2);
-                    });
-                }
-            }
+            } 
             @Override
+            public void onEnrollStop(Reader reader) {
+                //4throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+            }
+            
+            
             public void onError(Reader reader, int code){
                  Platform.runLater(() -> {
                         cmbDevices.setDisable(false);
@@ -207,20 +209,7 @@ public class EnrollmentDialog extends Stage implements Initializable {
                
             }
 
-            @Override
-            public void onClose(Reader reader) {
-                
-            }
-
-            @Override
-            public void onStopCapture(Reader reader) {
-                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-            }
-
-            @Override
-            public void onOpen(Reader reader) {
-                //throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-            }
+          
         });
         
         reader.startEnrollment();

@@ -1,10 +1,14 @@
 package uaz.fingerprint;
 
 public interface ReaderListener{
-	public void onStartCapture(Reader reader);
+	public void onCaptureStart(Reader reader);
 	public void onCapture(Reader reader, EnrollResult result);
-	public void onStopCapture(Reader reader);
-        public void onOpen(Reader reader);
-        public void onClose(Reader reader);
-        public void onError(Reader reader, int code);
+	public void onCaptureStop(Reader reader);
+        public void onEnrollStart(Reader reader);
+        public void onEnrollStop(Reader reader);
+        public void onEnroll(Reader reader, EnrollResult result);
+        public void onVerifyStart(Reader reader);
+        public void onVerify(Reader reader, VerifyResult result);
+        public void onVerifyStop(Reader reader);
+        
 }
